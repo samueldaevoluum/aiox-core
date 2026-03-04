@@ -1,4 +1,5 @@
-# Synkra AIOX: Framework Universal de Agentes IA 🚀
+# AIOX Squad: Artificial Intelligence Orchestration eXperience
+## Devolvendo às pessoas o poder de criar 
 
 > 🌍 [English](README.en.md) | **[Português](README.md)**
 
