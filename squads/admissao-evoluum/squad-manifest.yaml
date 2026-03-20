@@ -1,0 +1,60 @@
+squad:
+  name: admissao-evoluum
+  description: Squad de automacao do processo de admissao cooperativa da Evoluum
+  version: '1.0.0'
+  created: '2026-03-18'
+  created_by: Samuel (CEO) + Orion (@aiox-master)
+
+  context:
+    sop: ../sop-processo-admissao-v2.md
+    pdf_original: PPI 0002 - Processo de Admissao Cooperativa
+    pasta_trabalho: /Users/samuelmanoelsilveira/Documents/Samuel/Projetos/processo_admissao/
+    deploy_target: VPS (ja configurada)
+
+  scope:
+    fase_atual: Fase 1 - Recepcao (E01-E04)
+    fases_futuras:
+      - Fase 2 - Provisionamento (E05-E11)
+      - Fase 3 - Integracao Externa (E12-E14)
+      - Fase 4 - Documentacao Legal (E15)
+      - Fase 5 - Pre-Onboarding (E16-E17)
+      - Fase 6 - Dia do Onboarding (E18-E24)
+
+  agents:
+    - id: admissao-orchestrator
+      name: Nova
+      file: agents/admissao-orchestrator.md
+      scope: Trigger + E02 + E04 (orquestracao, estado, webhooks)
+
+    - id: admissao-comms
+      name: Iris
+      file: agents/admissao-comms.md
+      scope: E01 + E03 (proposta, e-mails)
+
+  integrations:
+    phase_1:
+      - service: Asana
+        api: REST API + Webhooks
+        operations: detectar tarefa criada por Manu, ler dados do candidato, detectar resposta do formulario
+        priority: P1
+
+      - service: Gmail
+        api: Gmail API
+        operations: enviar proposta, enviar e-mail boas-vindas
+        priority: P1
+
+  human_touchpoints:
+    - etapa: E01
+      tipo: validacao
+      quem: Pati
+      o_que: validar proposta gerada (regras GPTW, dados corretos)
+
+    - etapa: E02
+      tipo: aguardar
+      quem: Candidato
+      o_que: aceitar proposta
+
+    - etapa: E04
+      tipo: aguardar
+      quem: Cooperado
+      o_que: preencher formulario Asana

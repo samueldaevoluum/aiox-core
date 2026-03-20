@@ -1,0 +1,17 @@
+# Configuracao Asana para squad admissao-evoluum
+# Atualizar conforme necessario
+
+asana:
+  project_name: Admissao
+  form_link: https://form.asana.com/?k=o-sFF7PIfIgqBFLTXuZrdA&d=1163822025523717
+  template_name: Modelo Admissao Cooperativa
+  webhook_url: null  # configurar na VPS
+  api_token: null  # configurar via env var ASANA_API_TOKEN
+
+gmail:
+  sender_email: null  # e-mail da Pati - configurar
+  sender_name: Pati
+
+slack:
+  pati_user_id: null  # configurar
+  notification_channel: null  # configurar

@@ -1,9 +1,9 @@
 # @sop-extractor Memory - SOP Extraction Specialist
 
 ## Quick Stats
-- SOPs extraídos: 0
-- Fontes processadas: 0
-- Validações: 0
+- SOPs extraídos: 1
+- Fontes processadas: 1
+- Validações: 1 (revisão crítica da análise do @analyst)
 
 ---
 
@@ -30,6 +30,24 @@
 - "Walk me through..." = goldmine
 - Contradições indicam nuance importante
 
+### De PDFs de Processo (aprendido em 2026-03-18)
+- Campos destacados em amarelo = regras críticas ou status especial (ex: "EM TESTE")
+- Texto highlighted em azul/cinza = templates de comunicação — copiar literalmente
+- Instruções em nota de rodapé ou "OBS:" = edge cases importantes que analistas frequentemente ignoram
+- Sempre verificar se um e-mail e uma etapa separada ou parte de outra etapa já mapeada
+- Documentos externos referenciados (planilhas, links Drive) = sub-etapas com nome próprio
+
+---
+
+## Erros Comuns de Analistas (padrão identificado)
+- Colapsar duas etapas distintas por timing semelhante (ex: D-1 WhatsApp + D-0 e-mail)
+- Não capturar etapas de "salvar/registrar" (baixa visibilidade, alto impacto)
+- Subdocumentar etapas com múltiplos documentos/planilhas (tratar como "1 tarefa" quando são 3+)
+- Ignorar diferenciações de fluxo por tipo de perfil (ex: SQUAD vs Low Code/Outsourcing)
+- Omitir regras de veto/pre-condição do processo
+- Omitir co-responsáveis não óbvios (ex: Samuel assina documento junto com cooperado)
+- Contar "e-mails" sem ler os templates (pode ser 2, não 3)
+
 ---
 
 ## Formatos de Output
@@ -49,9 +67,12 @@
 ---
 
 ## Erros Comuns
-- ❌ Extrair processo genérico (não é SOP)
-- ❌ Misturar múltiplos SOPs em um
-- ❌ Não incluir veto conditions
+- Extrair processo genérico (não é SOP)
+- Misturar múltiplos SOPs em um
+- Não incluir veto conditions
+- Não capturar templates de comunicação literais
+- Não identificar dependências entre etapas (A depende de B)
+- Não marcar etapas com restrições temporais estritas (timing crítico)
 
 ---
 

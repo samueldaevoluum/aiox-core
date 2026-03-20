@@ -1,0 +1,43 @@
+template:
+  id: email-boas-vindas
+  name: E-mail de Boas-Vindas com Formulario Asana
+  type: email
+  format: texto
+  agent: admissao-comms
+
+email:
+  titulo: "Seja Bem-Vindo(a) a Evoluum!"
+  remetente:
+    source: data/asana-config.yaml
+    campo: gmail.sender_email
+  destinatario: email pessoal do cooperado
+
+campos_dinamicos:
+  - placeholder: "[NOME]"
+    campo: candidate_name
+
+  - placeholder: "[DATA_LIMITE]"
+    campo: form_deadline
+    calculo: data_atual + 24h
+    formato: "DD/MM/YYYY"
+
+  - placeholder: "[LINK_ASANA_FORM]"
+    source: data/asana-config.yaml
+    campo: asana.form_link
+
+corpo: |
+  Ola, [NOME],
+
+  Tudo bem?
+
+  Eu sou a Pati e irei preparar tudo para sua chegada no time.
+  Seja bem-vindo a equipe Evoluum!
+
+  Estamos ansiosos para conhecer voce!
+
+  Responda nosso questionario por favor, para te conhecermos melhor :)
+  Peco que responda o formulario ate [DATA_LIMITE]
+
+  Formulario: [LINK_ASANA_FORM]
+
+  Qualquer duvida, fico a disposicao.

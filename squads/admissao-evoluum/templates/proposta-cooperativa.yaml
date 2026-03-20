@@ -1,0 +1,53 @@
+template:
+  id: proposta-cooperativa
+  name: Proposta de Contratacao Cooperativa
+  type: visual
+  format: PDF ou imagem
+  agent: admissao-comms
+
+layout:
+  referencia_canva: https://www.canva.com/design/DAF7XhCXY04/mDQpU0XF3up6ZA1Ka2LPWw/edit
+  geracao: IA ou Canva Connect API
+  regras_gptw:
+    obrigatorio: true
+    selos:
+      - nome: "Melhores Empresas Para Trabalhar"
+        posicao: canto superior direito
+      - nome: "Great Place To Work Certified"
+        posicao: canto superior direito
+    referencia: data/gptw-rules.yaml
+
+campos_dinamicos:
+  - placeholder: "[NOME]"
+    campo: candidate_name
+    exemplo: "Anderson"
+
+  - placeholder: "[CARGO]"
+    campo: cargo
+    exemplo: "Engenheiro DevOps"
+
+  - placeholder: "[VALOR]"
+    campo: valor_mensal
+    formato: "R$ X.XXX,00"
+    exemplo: "R$ 12.000,00"
+
+  - placeholder: "[VALOR_EXTENSO]"
+    campo: valor_extenso
+    exemplo: "doze mil reais"
+
+  - placeholder: "[DATA_INICIO]"
+    campo: data_inicio
+    formato: "DD/MM/YYYY"
+    exemplo: "04/03/2024"
+
+conteudo_fixo:
+  header: "OI [NOME],"
+  corpo_empresa: "A SM SYSTEMS LA SM SYSTEMS LTDA - EVOLUUM esta buscando um evoluuido [CARGO] para os seus projetos no universo Evoluum, sendo a contratacao via cooperativa."
+  corpo_proposta: "Nossa proposta e que inicie como parceiro da Evoluum como [CARGO]. Pelos servicos prestados voce recebera o valor de: R$ [VALOR] ([VALOR_EXTENSO])."
+  corpo_data: "Nossa proposta e que inicie na Evoluum dia: [DATA_INICIO]"
+  titulo_beneficios: "As VANTAGENS serao:"
+  call_to_action: "Pronto para desvendar esse novo universo?"
+
+beneficios:
+  source: data/beneficios-evoluum.yaml
+  nota: lista fixa - nao alterar sem aprovacao do Samuel

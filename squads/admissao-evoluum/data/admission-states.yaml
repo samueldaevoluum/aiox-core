@@ -1,0 +1,35 @@
+# Definicao dos estados do processo de admissao
+
+states:
+  TRIGGERED:
+    description: Manu criou tarefa no Asana com dados do candidato
+    next: PROPOSAL_SENT
+    action: Nova dispara Iris para gerar proposta (E01)
+
+  PROPOSAL_SENT:
+    description: Iris gerou e enviou proposta ao candidato
+    next: PROPOSAL_ACCEPTED
+    action: Aguardar candidato responder "ok" (E02)
+    waiting_for: candidato
+
+  PROPOSAL_ACCEPTED:
+    description: Candidato aceitou a proposta
+    next: WELCOME_SENT
+    action: Nova dispara Iris para enviar boas-vindas (E03)
+
+  WELCOME_SENT:
+    description: Iris enviou e-mail de boas-vindas com formulario
+    next: FORM_COMPLETED
+    action: Aguardar cooperado preencher formulario Asana (E04)
+    waiting_for: cooperado
+    sla: 24h
+
+  FORM_COMPLETED:
+    description: Cooperado preencheu o formulario Asana
+    next: PHASE_2_READY
+    action: Nova extrai dados do formulario
+
+  PHASE_2_READY:
+    description: Dados extraidos e estruturados, pronto para Fase 2
+    next: null
+    action: Handoff para agentes de provisionamento (futuro)

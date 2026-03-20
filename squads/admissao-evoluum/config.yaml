@@ -1,0 +1,46 @@
+squad:
+  name: admissao-evoluum
+  version: '1.0.0'
+  description: Squad de automacao do processo de admissao cooperativa da Evoluum
+  created: '2026-03-18'
+  created_by: Samuel (CEO) + Orion (@aiox-master)
+  deploy_target: VPS
+
+agents:
+  - id: admissao-orchestrator
+    name: Nova
+    file: agents/admissao-orchestrator.md
+    role: orchestrator
+
+  - id: admissao-comms
+    name: Iris
+    file: agents/admissao-comms.md
+    role: specialist
+
+phases:
+  current: 1
+  total: 6
+  phase_1:
+    name: Recepcao
+    etapas: [E01, E02, E03, E04]
+    agents: [admissao-orchestrator, admissao-comms]
+    status: defined
+
+integrations:
+  asana:
+    project_name: Admissao
+    webhook_url: null  # configurar na VPS
+    form_link: https://form.asana.com/?k=o-sFF7PIfIgqBFLTXuZrdA&d=1163822025523717
+    template_name: Modelo Admissao Cooperativa
+
+  gmail:
+    sender_email: null  # e-mail da Pati - configurar
+    sender_name: Pati
+
+  canva:
+    proposal_template_url: https://www.canva.com/design/DAF7XhCXY04/mDQpU0XF3up6ZA1Ka2LPWw/edit
+    use_ai_generation: true  # pode gerar por IA ao inves de Canva
+
+references:
+  sop: ../../sop-processo-admissao-v2.md
+  pdf_original: PPI 0002 - Processo de Admissao Cooperativa

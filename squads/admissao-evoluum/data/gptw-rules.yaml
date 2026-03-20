@@ -1,0 +1,27 @@
+# Regras de exibicao dos selos GPTW na proposta Evoluum
+# OBRIGATORIO: seguir estas regras ao gerar proposta
+
+gptw:
+  obrigatorio: true
+  selos:
+    - nome: "Melhores Empresas Para Trabalhar"
+      tipo: selo_ranking
+      posicao: canto_superior_direito
+      tamanho_minimo: legivel
+      ano: 2023  # atualizar conforme certificacao vigente
+
+    - nome: "Great Place To Work Certified"
+      tipo: selo_certificacao
+      posicao: canto_superior_direito
+      tamanho_minimo: legivel
+      pais: BRASIL
+
+  regras_visuais:
+    - Selos devem estar visiveis e legiveis
+    - Nao distorcer proporcoes dos selos
+    - Manter cores originais dos selos
+    - Posicionar no canto superior direito da proposta
+    - Nao sobrepor com texto ou outros elementos
+
+  referencia_visual: templates/proposta-cooperativa.yaml
+  nota: Regras de uso definidas pela Evoluum. Verificar com Samuel se regras GPTW mudaram.

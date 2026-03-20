@@ -1,0 +1,116 @@
+workflow:
+  id: wf-admission-phase1
+  name: Admission Phase 1 - Recepcao
+  version: '1.0.0'
+  squad: admissao-evoluum
+  description: Fluxo completo da Fase 1 do processo de admissao cooperativa
+
+trigger:
+  type: asana_webhook
+  event: task.created
+  project: Admissao
+  condition: tarefa criada pela Manu com dados do candidato nos comentarios
+
+steps:
+  - id: step-1
+    name: Detectar Trigger
+    agent: admissao-orchestrator
+    task: start-admission
+    etapa_sop: TRIGGER
+    type: automatic
+    inputs:
+      source: webhook
+    outputs:
+      - admission_id
+      - candidate_data
+    next: step-2
+
+  - id: step-2
+    name: Gerar Proposta
+    agent: admissao-comms
+    task: generate-proposal
+    etapa_sop: E01
+    type: semi-automatic
+    inputs:
+      - candidate_name: "{step-1.candidate_data.nome}"
+      - cargo: "{step-1.candidate_data.cargo}"
+      - valor_mensal: "{step-1.candidate_data.salario}"
+      - data_inicio: "{step-1.candidate_data.data_inicio}"
+    human_validation:
+      required: true
+      who: Pati
+      what: validar visual da proposta (logos GPTW, dados corretos)
+    outputs:
+      - proposal_file
+      - proposal_approved
+    next: step-3
+    on_failure: notify-pati
+
+  - id: step-3
+    name: Enviar Proposta
+    agent: admissao-comms
+    task: send-proposal
+    etapa_sop: E01 (envio)
+    type: automatic
+    condition: step-2.proposal_approved == true
+    inputs:
+      - candidate_name: "{step-1.candidate_data.nome}"
+      - email: "{step-1.candidate_data.email_pessoal}"
+      - proposal_file: "{step-2.proposal_file}"
+    next: step-4
+
+  - id: step-4
+    name: Aguardar Aceite da Proposta
+    agent: admissao-orchestrator
+    etapa_sop: E02
+    type: wait
+    waiting_for: candidato
+    event: candidato responde e-mail aceitando proposta
+    timeout: null  # sem timeout definido
+    next: step-5
+
+  - id: step-5
+    name: Enviar Boas-Vindas + Formulario
+    agent: admissao-comms
+    task: send-welcome-email
+    etapa_sop: E03
+    type: automatic
+    inputs:
+      - candidate_name: "{step-1.candidate_data.nome}"
+      - email: "{step-1.candidate_data.email_pessoal}"
+    next: step-6
+
+  - id: step-6
+    name: Aguardar Preenchimento do Formulario
+    agent: admissao-orchestrator
+    etapa_sop: E04
+    type: wait
+    waiting_for: cooperado
+    event: form.submission_completed (Asana webhook)
+    sla: 24h
+    next: step-7
+
+  - id: step-7
+    name: Extrair Dados do Formulario
+    agent: admissao-orchestrator
+    task: extract-form-data
+    etapa_sop: E04 (extracao)
+    type: automatic
+    inputs:
+      - admission_id: "{step-1.admission_id}"
+    outputs:
+      - form_data
+      - email_format
+    next: complete
+
+  - id: complete
+    name: Fase 1 Concluida
+    type: end
+    state: PHASE_2_READY
+    handoff: Fase 2 - Provisionamento (agentes futuros)
+
+error_handling:
+  notify-pati:
+    action: Notificar Pati via Slack/Asana sobre falha
+    retry: true
+    max_retries: 2
