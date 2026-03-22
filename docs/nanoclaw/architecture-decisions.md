@@ -93,9 +93,41 @@ Nao e alterado                 E uma dependencia npm          Knowledge Base (RA
 - **Continuaremos com modelos on-premise** para controle de custo e privacidade
 - **Futuro:** Modelo maior (70B) como opcao "smart"
 
-### 3.6 Multi-tenancy
-- **MVP:** Uma instancia por cliente (simples, testar na propria empresa)
+### 3.6 Multi-tenancy e NCI (NanoClaw Instance)
+- **MVP:** Uma instancia NanoClaw por cliente/empresa (simples, testar na propria empresa)
 - **Futuro:** Multi-tenant com schemas separados + RLS
+
+#### Hierarquia: Empresa → NanoClaw Process → NCI (usuario)
+- **1 NanoClaw Process por empresa** — processo separado, API keys proprias, config propria
+- **1 NCI por usuario (funcionario)** — mapeia para "grupo" do NanoClaw
+- Cada NCI = 1 container Docker isolado (filesystem, IPC, processos)
+- NanoClaw ja faz spawn de containers por grupo nativamente — reutilizamos esse mecanismo
+
+#### Session Isolation (pesquisa realizada 2026-03-22)
+- NanoClaw tem **isolamento nativo por grupo de chat** (container Docker por grupo)
+- **NAO tem multi-tenant** — e single-owner by design
+- **NAO tem autenticacao de multiplos usuarios** — cada empresa precisa de sua propria instancia
+- O conceito de "grupo" do NanoClaw mapeia diretamente para NCI (sessao do usuario)
+- Cada container tem: filesystem isolado, IPC isolado, CLAUDE.md proprio, fila de mensagens propria
+
+#### IPC (Inter-Process Communication)
+- NanoClaw usa **arquivos JSON em diretorios compartilhados** entre host e container
+- Host escreve comando.json → container le, executa, escreve resultado.json → host le
+- Simples, seguro, sem portas expostas
+
+#### Modelo visual
+```
+Empresa A (NanoClaw Process)
+    ├── NCI Joao  (Container Docker) ← grupo "joao"
+    ├── NCI Maria (Container Docker) ← grupo "maria"
+    └── NCI Pedro (Container Docker) ← grupo "pedro"
+
+Empresa B (NanoClaw Process)
+    ├── NCI Ana    (Container Docker)
+    └── NCI Carlos (Container Docker)
+
+Empresa C (hibernada, sem containers ativos)
+```
 
 ### 3.7 Knowledge Base (MVP)
 - **Decisao:** Documentos uploadados (PDF, DOCX)
@@ -131,8 +163,46 @@ Nao e alterado                 E uma dependencia npm          Knowledge Base (RA
 ### 4.1 Camadas
 
 ```
+                    ┌─────────────────────────────────────┐
+                    │          CANAIS DE ENTRADA           │
+                    │   Telegram  |  Web App  |  Webhook   │
+                    └──────────────────┬──────────────────┘
+                                      |
+                                      v
+                    ┌─────────────────────────────────────┐
+                    │           API GATEWAY                │
+                    │  Auth (empresa+usuario) | Rate limit │
+                    │  Resolucao de permissoes | Routing   │
+                    └──────────────────┬──────────────────┘
+                                      |
+                                      v
+                    ┌─────────────────────────────────────┐
+                    │        LIFECYCLE MANAGER             │
+                    │  Spawn/Hibernate/Wake NanoClaw       │
+                    │  Health check | Metering/Billing     │
+                    └──────────────────┬──────────────────┘
+                                      |
+              ┌───────────────────────┼───────────────────────┐
+              |                       |                       |
+              v                       v                       v
+┌──────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
+│  EMPRESA A           │ │  EMPRESA B           │ │  EMPRESA C           │
+│  NanoClaw Process    │ │  NanoClaw Process    │ │  (hibernado)         │
+│                      │ │                      │ │                      │
+│  ┌────────────────┐  │ │  ┌────────────────┐  │ │                      │
+│  │ NCI Joao       │  │ │  │ NCI Ana        │  │ │                      │
+│  │ (Container)    │  │ │  │ (Container)    │  │ │                      │
+│  └────────────────┘  │ │  └────────────────┘  │ │                      │
+│  ┌────────────────┐  │ │  ┌────────────────┐  │ │                      │
+│  │ NCI Maria      │  │ │  │ NCI Carlos     │  │ │                      │
+│  │ (Container)    │  │ │  │ (Container)    │  │ │                      │
+│  └────────────────┘  │ │  └────────────────┘  │ │                      │
+└──────────────────────┘ └──────────────────────┘ └──────────────────────┘
+              |                       |
+              └───────────┬───────────┘
+                          v
 ┌─────────────────────────────────────────────────────────────┐
-│                    NOSSA PLATAFORMA                          │
+│                    SERVICOS COMPARTILHADOS                    │
 │                                                              │
 │  ┌───────────┐  ┌──────────────┐  ┌───────────────────┐    │
 │  │ Admin UI  │  │  Workflow    │  │  Knowledge Base   │    │
@@ -140,28 +210,14 @@ Nao e alterado                 E uma dependencia npm          Knowledge Base (RA
 │  └───────────┘  └──────────────┘  └───────────────────┘    │
 │                                                              │
 │  ┌───────────────────────────────────────────────────────┐  │
-│  │              NanoClaw (orquestrador)                    │  │
-│  │                                                         │  │
-│  │  ┌─────────┐  ┌──────────┐  ┌────────────┐            │  │
-│  │  │Telegram │  │ Slack    │  │ WhatsApp   │            │  │
-│  │  │Channel  │  │ Channel  │  │ Channel    │            │  │
-│  │  └────┬────┘  └────┬─────┘  └─────┬──────┘            │  │
-│  │       └─────────────┼──────────────┘                    │  │
-│  │                     ▼                                    │  │
-│  │           ┌─────────────────┐                           │  │
-│  │           │  Agent Runtime  │  (container isolation)    │  │
-│  │           │  + Swarms       │                           │  │
-│  │           └─────────────────┘                           │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                              │
-│  ┌───────────────────────────────────────────────────────┐  │
 │  │                    Task Router                         │  │
-│  │  mensagem → [WORKER] | [WORKER+API] | [CLONE] | [HUMAN] │
+│  │  mensagem -> [WORKER] | [WORKER+API] | [CLONE] | [HUMAN]│
 │  └───────────────────────────────────────────────────────┘  │
 │                                                              │
 │  ┌───────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐ │
 │  │PostgreSQL │  │ Ollama    │  │ External │  │ Webhook  │  │
 │  │+ pgvector │  │ (LLM)    │  │ APIs     │  │ Receiver │  │
+│  │ (RLS)     │  │           │  │          │  │          │  │
 │  └───────────┘  └───────────┘  └──────────┘  └──────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -260,12 +316,58 @@ autoNanoClaw:
   temperature: 0.3
 ```
 
-### 4.4 Tipos de Memoria
+### 4.4 Tipos de Memoria e Controle de Acesso
 
-1. **Conversa atual** (efemera) — morre com a sessao
-2. **Historico de conversas** (persistente) — PostgreSQL, pesquisavel
-3. **Memoria do agent sobre o usuario** (aprendida) — preferencias acumuladas
-4. **Knowledge base** (estatica) — documentos da empresa via RAG
+#### 4 Camadas de Memoria
+
+| Camada | Persistencia | Escopo | Onde vive | Controle de acesso |
+|--------|-------------|--------|-----------|-------------------|
+| **Conversa atual** | Efemera — morre com a sessao | NCI | Container Docker | Isolamento por container |
+| **Memoria pessoal** | Persistente (aprendida) | Usuario | PostgreSQL (RLS) | So o proprio usuario |
+| **Historico** | Persistente | Usuario + Admin | PostgreSQL (RLS) | Usuario le, admin audita |
+| **Knowledge Base** | Estatica (RAG) | Empresa | pgvector (RLS) | 3 niveis (ver abaixo) |
+
+#### Knowledge Base — 3 Niveis de Visibilidade
+
+| Nivel | Quem acessa | Exemplo |
+|-------|-------------|---------|
+| **Publica** | Todos os funcionarios do tenant | Manual do funcionario, politicas gerais |
+| **Restrita** | Grupos autorizados (memory_access.groups) | Tabela salarial → so [rh, gestao-pessoas] |
+| **Privada** | So admin da empresa | Dados estrategicos, contratos |
+
+#### Como a memoria chega no container (NCI)
+
+O NanoClaw nao sabe nada sobre controle de acesso. Quem monta o contexto e a camada que construimos:
+
+```
+Mensagem do Joao chega
+        |
+        v
+  API Gateway (auth + permissoes)
+        |
+        v
+  Lifecycle Manager
+        |
+        |-- 1. Busca perfil do Joao no PostgreSQL
+        |      (grupos: [vendas], permissoes, preferencias)
+        |
+        |-- 2. Monta CLAUDE.md personalizado
+        |      (memoria pessoal HOT + regras da empresa)
+        |
+        |-- 3. Configura tools disponiveis
+        |      (Joao NAO tem acesso ao tool de RH)
+        |
+        |-- 4. Configura RAG com filtro de acesso
+        |      (Joao so ve docs de [vendas, publico])
+        |
+        |-- 5. Spawna/roteia pro container do Joao
+```
+
+#### Sincronizacao container → PostgreSQL
+
+- Durante sessao: container escreve estado local
+- Ao encerrar sessao: hook sync persiste memoria pessoal atualizada no PostgreSQL
+- Proximo spawn: Lifecycle Manager injeta memoria pessoal no CLAUDE.md do container
 
 ### 4.5 Workflow Engine
 
@@ -376,10 +478,23 @@ Interacao:
   - Como memory_access se traduz em queries SQL
   - Audit log de acessos sensiveis
 
-### 5.8 Modelo de Pricing/Billing
+### 5.8 Lifecycle Manager — Decisoes Pendentes
+- **Status:** PARCIALMENTE DISCUTIDO
+- **Confirmado:**
+  - API Gateway identifica usuario/empresa e cria ou roteia NCI
+  - Lifecycle Manager gerencia spawn/hibernate/wake/destroy de NanoClaw processes
+- **Perguntas em aberto:**
+  - Hibernacao de NCI: timeout fixo? Baseado em atividade?
+  - Hibernacao de NanoClaw process (empresa): quanto tempo sem atividade?
+  - Sync de memoria container→PostgreSQL: hook pos-sessao? Streaming?
+  - Autenticacao cross-channel: OAuth? Token por canal? SSO?
+  - Escala horizontal: multiplos hosts rodando Lifecycle Managers?
+  - Health check: frequencia? O que monitora?
+
+### 5.9 Modelo de Pricing/Billing
 - **Status:** NAO DISCUTIDO
 
-### 5.9 Nome da Plataforma
+### 5.10 Nome da Plataforma
 - **Status:** NAO DISCUTIDO
 - **Contexto:** NanoClaw e o framework, nao nosso produto. Precisamos de um nome para a plataforma.
 
@@ -429,16 +544,22 @@ Interacao:
 
 ## 8. Proximos Passos
 
-1. [ ] Receber fluxo de decisao correto do Task Router (do fundador)
-2. [ ] Definir integracao com MCP
-3. [ ] Entender e integrar base de conhecimento de gestao
-4. [ ] Definir nome da plataforma
-5. [ ] Criar PRD completo
-6. [ ] Definir estrutura do repo separado
-7. [ ] Definir quais agents genericos criar primeiro
-8. [ ] Implementar MVP
+1. [x] Pesquisar session isolation do NanoClaw (confirmado: grupo = NCI)
+2. [x] Definir hierarquia empresa → NanoClaw process → NCI (usuario)
+3. [x] Definir sistema de memoria com controle de acesso (3 niveis KB)
+4. [x] Definir fluxo API Gateway → Lifecycle Manager → NCI
+5. [ ] Receber fluxo de decisao correto do Task Router (do fundador)
+6. [ ] Definir integracao com MCP
+7. [ ] Entender e integrar base de conhecimento de gestao
+8. [ ] Definir nome da plataforma
+9. [ ] Detalhar Lifecycle Manager (hibernacao, sync, health check)
+10. [ ] Definir autenticacao cross-channel
+11. [ ] Criar PRD completo
+12. [ ] Definir estrutura do repo separado
+13. [ ] Definir quais agents genericos criar primeiro
+14. [ ] Implementar MVP
 
 ---
 
 *Documento atualizado na sessao claude/analyze-image-tr45K em 2026-03-22*
-*Correcao: NanoClaw e framework OSS (dependencia), nao o produto*
+*Atualizado: NCI = grupo NanoClaw, session isolation, memoria multi-tenant, API Gateway + Lifecycle Manager*
