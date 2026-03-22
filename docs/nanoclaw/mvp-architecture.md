@@ -25,14 +25,9 @@
 │  │  /webhook/pipedrive   ← Pipedrive events               │  │
 │  │                                                        │  │
 │  │  Tool Server (funcoes que agentes chamam):              │  │
-│  │    asana_create_task()                                  │  │
-│  │    asana_update_task()                                  │  │
-│  │    asana_get_tasks()                                    │  │
-│  │    pipedrive_create_deal()                              │  │
-│  │    pipedrive_update_deal()                              │  │
-│  │    pipedrive_get_deals()                                │  │
-│  │    db_query()                                           │  │
-│  │    notify_human()                                       │  │
+│  │    Tools Asana (a definir com processos RH)             │  │
+│  │    Tools Pipedrive (a definir com processos Comercial)  │  │
+│  │    Tools internos (a definir conforme necessidade)      │  │
 │  └───────────┬──────────────────────────┬─────────────────┘  │
 │              │ IPC (JSON)               │ HTTP                │
 │              ▼                          ▼                     │
@@ -346,139 +341,70 @@ CREATE TABLE processes (
 
 ---
 
-## 8. Tools que o NanoClaw Chama (Function Calling)
+## 8. Tools (Function Calling)
 
 O NanoClaw configura tools como funcoes que o Claude Agent SDK pode chamar.
 Cada tool e um endpoint HTTP no FastAPI.
 
-### Tools MVP
+**Tools serao definidos quando os processos de RH e Comercial forem detalhados.**
+Cada processo vai gerar os tools necessarios (ex: se admissao precisa criar task no Asana, tera um tool pra isso).
 
-```yaml
-tools:
-  # --- ASANA ---
-  - name: asana_create_task
-    description: "Cria uma task no Asana"
-    parameters:
-      project_name: string    # Nome do projeto
-      task_name: string       # Nome da task
-      assignee: string        # Email do responsavel (opcional)
-      due_date: string        # Data limite (opcional)
-      notes: string           # Descricao (opcional)
+### Mecanismo
 
-  - name: asana_update_task
-    description: "Atualiza status ou campos de uma task no Asana"
-    parameters:
-      task_id: string
-      status: string          # completed, in_progress
-      notes: string           # Comentario adicional (opcional)
-
-  - name: asana_get_tasks
-    description: "Lista tasks de um projeto no Asana"
-    parameters:
-      project_name: string
-      status: string          # all, incomplete, completed
-      assignee: string        # Filtrar por responsavel (opcional)
-
-  # --- PIPEDRIVE ---
-  - name: pipedrive_create_deal
-    description: "Cria um deal no Pipedrive"
-    parameters:
-      title: string
-      contact_name: string
-      value: number
-      stage: string           # Nome do stage no pipeline
-
-  - name: pipedrive_update_deal
-    description: "Atualiza um deal no Pipedrive"
-    parameters:
-      deal_id: integer
-      stage: string           # Mover para outro stage
-      notes: string           # Adicionar nota
-
-  - name: pipedrive_get_deals
-    description: "Lista deals do pipeline"
-    parameters:
-      stage: string           # Filtrar por stage (opcional)
-      owner: string           # Filtrar por dono (opcional)
-
-  # --- INTERNOS ---
-  - name: db_query
-    description: "Consulta dados internos da empresa"
-    parameters:
-      query_type: string      # 'user_info', 'process_status'
-      filters: object
-
-  - name: notify_human
-    description: "Escala para um humano real via Telegram"
-    parameters:
-      to_user: string         # Nome ou departamento
-      message: string
-      urgency: string         # normal, urgent
-
-  - name: start_process
-    description: "Inicia um processo de negocio (ex: admissao)"
-    parameters:
-      process_type: string    # 'admissao'
-      context: object         # Dados iniciais (nome candidato, cargo, etc)
 ```
+Agente precisa agir no mundo
+    │
+    ▼
+Claude Agent SDK faz function call: tool_name(params)
+    │
+    ▼
+NanoClaw envia request HTTP para FastAPI: POST /tools/{tool_name}
+    │
+    ▼
+FastAPI valida, executa (Asana SDK, Pipedrive SDK, DB query, etc)
+    │
+    ▼
+Retorna resultado → NanoClaw → agente continua conversa
+```
+
+### Categorias previstas
+
+| Categoria | Quando definir |
+|-----------|---------------|
+| Asana tools | Ao detalhar processo de admissao (RH) |
+| Pipedrive tools | Ao detalhar processos comerciais |
+| Internos (DB, notificacoes) | Conforme necessidade dos processos |
 
 ---
 
-## 9. Agente Helena (RH — Admissao)
+## 9. Agentes
+
+Fundador ja desenvolveu os agentes. Definicoes serao portadas para o formato NanoClaw quando os processos forem detalhados.
+
+### Formato esperado (estrutura, sem conteudo inventado)
 
 ```yaml
 agent:
-  name: Helena
-  id: rh
-  title: Assistente de RH
+  name: (nome do agente)
+  id: (identificador)
+  title: (titulo)
 
 persona:
-  role: Especialista em Recursos Humanos
-  style: Acolhedor, preciso, profissional
-  identity: |
-    Sou a Helena, assistente digital de RH da Evoluum.
-    Ajudo com processos de admissao, acompanhamento de tarefas
-    e orientacao sobre politicas da empresa.
+  role: (papel)
+  style: (estilo de comunicacao)
+  identity: (descricao)
 
 core_principles:
-  - Nunca inventar informacoes
-  - Sempre confirmar dados criticos antes de agir
-  - Escalar para humano em caso de duvida
+  - (regras criticas do agente)
 
 commands:
-  - name: iniciar-admissao
-    type: agent
-    match_patterns:
-      - "admissao"
-      - "novo funcionario"
-      - "contratar"
-      - "nova contratacao"
-    tools: [start_process, asana_create_task, notify_human]
-
-  - name: status-admissao
-    type: worker_api
-    match_patterns:
-      - "como esta a admissao"
-      - "status da admissao"
-      - "andamento da contratacao"
-    tools: [asana_get_tasks, db_query]
-
-  - name: tarefas-pendentes
-    type: worker_api
-    match_patterns:
-      - "tarefas pendentes"
-      - "o que falta fazer"
-      - "pendencias"
-    tools: [asana_get_tasks]
+  - name: (nome do command)
+    type: worker | worker_api | agent
+    match_patterns: [...]
+    tools: [...]
 
 dependencies:
-  tools:
-    - start_process
-    - asana_create_task
-    - asana_update_task
-    - asana_get_tasks
-    - db_query
-    - notify_human
+  tools: [...]
 
 autoNanoClaw:
   version: '1.0'
@@ -523,32 +449,25 @@ curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?url=https://s
 
 ## 11. O que Construir (ordem)
 
-| # | O que | Quem faz | Dependencia |
-|---|-------|----------|-------------|
-| 1 | docker-compose.yml + Dockerfiles | Dev | Nenhuma |
-| 2 | FastAPI base (main.py, config) | Dev | #1 |
-| 3 | Schema PostgreSQL + Alembic | Dev | #2 |
-| 4 | Webhook Telegram (/webhook/telegram) | Dev | #2 |
-| 5 | Servico NanoClaw (IPC com FastAPI) | Dev | #1 |
-| 6 | Agent Helena (YAML + config) | Dev | #5 |
-| 7 | Tools Asana (create/update/get) | Dev | #2 |
-| 8 | Tools Pipedrive (create/update/get) | Dev | #2 |
-| 9 | Webhook Asana (/webhook/asana) | Dev | #7 |
-| 10 | Webhook Pipedrive (/webhook/pipedrive) | Dev | #8 |
-| 11 | Processo de Admissao (steps + Asana) | Dev | #6, #7 |
-| 12 | Nginx + SSL | DevOps | #2 |
-| 13 | Deploy VPS | DevOps | Tudo |
+| # | O que | Dependencia |
+|---|-------|-------------|
+| 1 | docker-compose.yml + Dockerfiles | Nenhuma |
+| 2 | FastAPI base (main.py, config) | #1 |
+| 3 | Schema PostgreSQL + Alembic | #2 |
+| 4 | Webhook Telegram (/webhook/telegram) | #2 |
+| 5 | Servico NanoClaw (IPC com FastAPI) | #1 |
+| 6 | Portar agentes existentes para NanoClaw | #5 |
+| 7 | Tools + Webhooks (quando processos forem definidos) | #2, #5 |
+| 8 | Nginx + SSL | #2 |
+| 9 | Deploy VPS | Tudo |
 
 ### Fase 1 (funcional minimo): #1-6
-Colaborador fala com Helena no Telegram, Helena responde via Claude.
+Colaborador fala com agente no Telegram, agente responde via Claude.
 
-### Fase 2 (integracoes): #7-10
-Helena cria/consulta tasks no Asana, deals no Pipedrive.
+### Fase 2 (integracoes): #7
+Tools e webhooks Asana/Pipedrive conforme processos definidos.
 
-### Fase 3 (processo): #11
-Processo de admissao completo com steps no Asana.
-
-### Fase 4 (producao): #12-13
+### Fase 3 (producao): #8-9
 SSL, dominio, deploy na VPS.
 
 ---
