@@ -49,27 +49,32 @@ Colaborador Evoluum
 │            FastAPI Gateway                   │
 │                                              │
 │  Auth simples (user_id do Telegram)          │
+│  Webhook receiver (Telegram, Asana, Pipe)    │
+│  Routing para NanoClaw                       │
+│                                              │
+│  ┌────────────────────────────────────────┐  │
+│  │         INTEGRACOES (Worker+API)       │  │
+│  │  Asana SDK  |  Pipedrive SDK           │  │
+│  └────────────────────────────────────────┘  │
+│                                              │
+└──────────────────┬───────────────────────────┘
+                   │ IPC (arquivos JSON)
+                   ▼
+┌─────────────────────────────────────────────┐
+│          NanoClaw (Orchestrator)             │
+│                                              │
 │  Hybrid Router (4 niveis)                    │
 │  Task Router (decision tree)                 │
+│  Message queue por grupo                     │
+│  Memoria por grupo (CLAUDE.md)               │
 │                                              │
 │  ┌────────────┐  ┌────────────────────────┐ │
 │  │ Agente RH  │  │ Agente Comercial       │ │
-│  │            │  │                        │ │
-│  │ Processos: │  │ Processos:             │ │
-│  │ (a definir)│  │ (a definir)            │ │
-│  └─────┬──────┘  └────────┬───────────────┘ │
-│        │                   │                 │
-│  ┌─────┴───────────────────┴──────────────┐ │
-│  │          EXECUTORES                     │ │
-│  │  Worker | Worker+API | Agente (LLM)    │ │
-│  └─────┬───────────┬──────────────────────┘ │
-│        │           │                         │
-└────────┼───────────┼─────────────────────────┘
-         │           │
-    ┌────┴──┐   ┌────┴────┐
-    │ Asana │   │Pipedrive│
-    │ (API) │   │  (API)  │
-    └───────┘   └─────────┘
+│  │ (Admissao) │  │ (a definir)            │ │
+│  └────────────┘  └────────────────────────┘ │
+│                                              │
+│  Executores: Worker | Worker+API | Agente   │
+└──────────────────────────────────────────────┘
 
 ┌──────────┐  ┌──────────────┐
 │PostgreSQL│  │ Claude API   │
@@ -77,18 +82,24 @@ Colaborador Evoluum
 └──────────┘  └──────────────┘
 ```
 
+### Papel de cada peca no MVP
+
+| Peca | Responsabilidade |
+|------|-----------------|
+| **FastAPI** | Gateway: auth, webhooks (Telegram/Asana/Pipedrive), integracoes externas |
+| **NanoClaw** | Orquestrador: routing, executores, memoria, agentes, message queue |
+| **PostgreSQL** | Dados persistentes (substituindo SQLite do NanoClaw) |
+| **Claude API** | LLM para agentes (NanoClaw ja suporta modelos externos) |
+
 ### Simplificacoes para MVP
 
 | Arquitetura completa | MVP |
 |---------------------|-----|
-| 1 NanoClaw Process por empresa | Processo unico FastAPI |
-| 1 NCI (container Docker) por usuario | Sem containers por usuario |
-| Lifecycle Manager (spawn/hibernate) | Nao necessario |
+| 1 NanoClaw Process por empresa | 1 NanoClaw Process (Evoluum) |
+| 1 NCI (container Docker) por usuario | Simplificado: grupos NanoClaw sem Docker por user |
+| Lifecycle Manager (spawn/hibernate) | Nao necessario (single-tenant) |
 | Multi-tenant com RLS | Single-tenant, sem RLS |
-| Web UI Admin (Next.js) | Configuracao via arquivos/banco |
-| NanoClaw como orchestrator separado | FastAPI faz tudo diretamente |
-
-**Nota:** NanoClaw nao entra no MVP. O FastAPI assume o papel de gateway + router + executor diretamente. NanoClaw sera integrado quando precisarmos de multi-tenancy e isolamento por container.
+| Web UI Admin (Next.js) | Configuracao via YAML/banco |
 
 ---
 
@@ -141,7 +152,8 @@ Colaborador Evoluum
 
 | Componente | Tecnologia |
 |------------|-----------|
-| Backend | Python 3.12+ / FastAPI |
+| Orquestrador | NanoClaw (Node.js, ~3900 LOC) |
+| Gateway | Python 3.12+ / FastAPI |
 | ORM | SQLAlchemy 2.0 + asyncpg |
 | Migrations | Alembic |
 | Banco | PostgreSQL 16 |
