@@ -446,20 +446,16 @@ Interacao:
 ## 5. Pontos Pendentes
 
 ### 5.1 Fluxo de Decisao do Task Router
-- **Status:** PENDENTE
-- **Contexto:** O fluxo proposto (match exato → worker, match acao → worker+API, senao → LLM) foi considerado diferente pelo fundador
-- **Acao:** Fundador vai enviar o fluxo correto em sessao futura
-- **Impacto:** Afeta como a plataforma decide qual executor usar para cada mensagem
+- **Status:** DECIDIDO (2026-03-22)
+- **Decisao:** Hybrid Router (4 niveis: Name Detection → Pattern Match → LLM Classifier → Concierge) + Task Router (Decision Tree com 5 executores)
+- **Detalhes completos:** `NCI-ARCHITECTURE-DECISIONS.md` secao 2 e 3, `full-architecture.md` Camada 4
 
 ### 5.2 Configuracao e Integracao com MCP
-- **Status:** PENDENTE
-- **Contexto:** Como a plataforma vai usar/integrar com MCP (Model Context Protocol)?
-- **Perguntas em aberto:**
-  - A plataforma tera seu proprio MCP server?
-  - Os tools dos agents serao implementados como MCP tools?
-  - Como o modelo on-premise se conecta com MCP tools?
-  - A plataforma expoe MCP para que outras ferramentas se conectem?
-- **Impacto:** Define como tools sao implementados e como o LLM acessa funcionalidades externas
+- **Status:** DECIDIDO (2026-03-22)
+- **Decisao:** Function Calling via FastAPI (hoje). MCP como evolucao futura — cada grupo de tools vira um MCP Server, Tool Router vira MCP Client.
+- **Hoje:** Tools sao funcoes Python registradas no FastAPI. Tool Router valida permissao, argumentos, audit log, executa e retorna resultado pro LLM.
+- **Futuro:** db-mcp, erp-mcp, rag-mcp, notif-mcp servers. Discovery dinamico, protocolo padronizado, reuso entre NCIs.
+- **Detalhes completos:** `full-architecture.md` Camada 5
 
 ### 5.3 Base de Conhecimento de Gestao de Negocio
 - **Status:** PENDENTE
@@ -593,20 +589,21 @@ Interacao:
 
 ## 8. Proximos Passos
 
+### Concluidos
 1. [x] Pesquisar session isolation do NanoClaw (confirmado: grupo = NCI)
-2. [x] Definir hierarquia empresa → NanoClaw process → NCI (usuario)
+2. [x] Definir hierarquia empresa -> NanoClaw process -> NCI (usuario)
 3. [x] Definir sistema de memoria com controle de acesso (3 niveis KB)
-4. [x] Definir fluxo API Gateway → Lifecycle Manager → NCI
-5. [x] Receber fluxo de decisao correto do Task Router (definido na secao 3.11)
-6. [ ] Definir integracao com MCP
-7. [ ] Entender e integrar base de conhecimento de gestao
-8. [ ] Definir nome da plataforma
-9. [ ] Detalhar Lifecycle Manager (hibernacao, sync, health check)
-10. [ ] Definir autenticacao cross-channel
-11. [ ] Criar PRD completo
-12. [ ] Definir estrutura do repo separado
-13. [ ] Definir quais agents genericos criar primeiro
-14. [ ] Implementar MVP
+4. [x] Definir fluxo API Gateway -> Lifecycle Manager -> NCI
+5. [x] Receber fluxo de decisao correto do Task Router (secao 3.11 + 5.1)
+6. [x] Definir integracao com MCP (Function Calling hoje, MCP futuro — secao 5.2)
+7. [x] Definir arquitetura completa de 7 camadas (`full-architecture.md`)
+
+### Pendentes
+> **Decisoes pendentes consolidadas em:** `pending-decisions.md`
+> Consultar documento unico para lista completa e atualizada.
+
+8. [ ] Criar PRD completo
+9. [ ] Implementar MVP
 
 ---
 

@@ -8,9 +8,9 @@
 
 ## 1. O Que É o NCI
 
-**NCI = Namespace de Colaborador Inteligente**
+**NCI = NanoClaw Instance**
 
-Container Docker isolado por colaborador da empresa. Cada funcionário tem seu próprio NCI com agentes de IA personalizados para sua empresa.
+Container Docker isolado por colaborador da empresa. Cada funcionario tem seu proprio NCI com agentes de IA personalizados para sua empresa.
 
 ### Exemplo
 
@@ -331,16 +331,10 @@ nci-container/
 
 ---
 
-## 10. Próximos Passos
+## 10. Proximos Passos
 
-Para continuar na próxima sessão:
-
-1. **Lifecycle do container** — Spawn, idle timeout, destroy, scaling
-2. **Comunicação entre NCIs** — Quando agentes de containers diferentes interagem
-3. **Persistência e memória** — O que sobrevive entre sessões
-4. **Modelo de dados** — Schema das tasks, agents, clones (YAML definitions)
-5. **Segurança e isolamento** — RLS, secrets, permissões por NCI
-6. **Observabilidade** — Logs, métricas, dashboards (CLI First!)
+> **Decisoes pendentes consolidadas em:** `docs/nanoclaw/pending-decisions.md`
+> Consultar documento unico para lista completa e atualizada.
 
 ---
 

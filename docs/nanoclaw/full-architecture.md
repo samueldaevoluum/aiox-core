@@ -389,10 +389,7 @@ Tempo: ~8s
 
 ---
 
-## Pendencias para Definicao do MVP
+## Pendencias
 
-- [ ] Definir recorte minimo das camadas para MVP
-- [ ] Decidir se MVP usa Docker por NCI ou processo simples
-- [ ] Definir quais tools implementar primeiro
-- [ ] Definir modelo Ollama para MVP (qwen2, llama3, etc.)
-- [ ] Definir se MVP precisa de RAG ou so memoria simples
+> **Todas as decisoes pendentes consolidadas em:** `pending-decisions.md`
+> Consultar documento unico para lista completa e atualizada.
