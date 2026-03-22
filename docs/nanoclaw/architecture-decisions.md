@@ -71,8 +71,9 @@ Nao e alterado                 E uma dependencia npm          Knowledge Base (RA
 
 ### 3.1 Repositorio
 - **Decisao:** Repo separado do AIOX
-- **NanoClaw:** Usado como dependencia (npm), nao como fork
+- **NanoClaw:** Orquestrado via IPC (arquivos JSON), nao como dependencia direta
 - **AIOX nao sera alterado**
+- **Backend:** Python (FastAPI)
 
 ### 3.2 Banco de Dados
 - **Decisao:** PostgreSQL (substituindo SQLite do NanoClaw)
@@ -155,6 +156,35 @@ Empresa C (hibernada, sem containers ativos)
   - **CLONE** — Agente de IA processa via LLM + RAG (ex: analisar documentacao)
   - **HUMANO** — Escala para pessoa real com notificacao (ex: contestar avaliacao)
 - **Beneficio:** ~65% economia de tokens roteando deterministico vs IA
+
+### 3.12 Backend Python (DECIDIDO — 2026-03-22)
+- **Decisao:** Backend em Python com FastAPI (substituindo Node.js)
+- **Motivo:** Ecossistema Python mais maduro para IA/ML, Ollama SDK, RAG, embeddings
+- **Framework:** FastAPI (async nativo, Pydantic validation, OpenAPI auto-docs)
+- **ORM:** SQLAlchemy 2.0 com asyncpg (async PostgreSQL)
+- **Migrations:** Alembic (integrado com SQLAlchemy)
+- **Telegram Bot:** aiogram 3.x (async, bem mantido)
+- **LLM:** ollama-python (SDK oficial)
+- **Testes:** pytest + pytest-asyncio + httpx (test client async)
+- **Package Manager:** uv (rapido, lockfile deterministico, compativel pip)
+- **Linting:** ruff (linter + formatter, extremamente rapido)
+- **Type checking:** mypy ou pyright
+- **Impacto NanoClaw:** Zero — NanoClaw continua rodando em Node.js como processo separado. Comunicacao via IPC (arquivos JSON), mesma interface que ja existe.
+
+#### Justificativa tecnica
+```
+Python                              vs Node.js (descartado)
+───────                             ────────────────────────
+FastAPI async nativo                Express/Fastify
+SQLAlchemy 2.0 (maduro)             Prisma/Drizzle (mais jovens)
+Ecossistema IA/ML nativo            Precisa de bridges Python
+ollama-python (SDK oficial)         ollama-js
+pgvector nativo                     pgvector-node
+Pydantic validation built-in        Zod/Joi (separado)
+Alembic (migrations maduras)        Knex/Prisma migrations
+pytest (poderoso)                   Jest/Vitest
+uv (package manager rapido)         npm/pnpm
+```
 
 ---
 
@@ -452,18 +482,28 @@ Interacao:
 - **Proposta inicial:**
   ```
   nossa-plataforma/
-  ├── server/              # Backend (Node.js)
-  │   ├── core/            # Auth, Agent Loader, Memory Gateway
-  │   ├── workflow-engine/ # Workflow Engine
-  │   ├── webhooks/        # Webhook Receiver
-  │   └── providers/       # Ollama Provider
+  ├── server/              # Backend (Python/FastAPI)
+  │   ├── app/
+  │   │   ├── api/         # Rotas FastAPI (REST endpoints)
+  │   │   ├── core/        # Auth, config, security, settings
+  │   │   ├── models/      # SQLAlchemy models
+  │   │   ├── schemas/     # Pydantic schemas (request/response)
+  │   │   ├── services/    # Business logic (Agent Loader, Memory Gateway)
+  │   │   ├── workflow/    # Workflow Engine
+  │   │   ├── workers/     # Worker executors (deterministicos)
+  │   │   ├── webhooks/    # Webhook Receiver
+  │   │   └── providers/   # Ollama Provider, Telegram Bot
+  │   ├── migrations/      # Alembic migrations
+  │   ├── tests/           # pytest tests
+  │   ├── pyproject.toml   # Dependencias (uv/poetry)
+  │   └── Dockerfile
   ├── web/                 # Next.js Admin UI
-  ├── db/                  # Migrations, seeds, RLS policies
+  ├── db/                  # Seeds, RLS policies SQL
   ├── docker/              # docker-compose, Dockerfiles
-  ├── agents/              # Agent definitions (templates)
+  ├── agents/              # Agent definitions (YAML templates)
   └── docs/                # Documentacao
   ```
-- **NanoClaw:** importado como `npm install nanoclaw` ou similar
+- **NanoClaw:** Orquestrado via IPC (arquivos JSON entre host e container), nao como dependencia Python
 
 ### 5.6 Processo de Admissao (Exemplo de Workflow)
 - **Status:** Discutido como exemplo, nao implementado
@@ -504,16 +544,23 @@ Interacao:
 
 | Componente | Tecnologia | Status |
 |------------|-----------|--------|
-| Orquestrador de Agents | NanoClaw (framework OSS) | Confirmado |
-| Backend/Server | Node.js | Confirmado |
+| Orquestrador de Agents | NanoClaw (framework OSS, Node.js) | Confirmado |
+| Backend/Server | **Python 3.12+ (FastAPI)** | Confirmado |
+| Framework Web | FastAPI (async, Pydantic, OpenAPI) | Confirmado |
+| ORM | SQLAlchemy 2.0 + asyncpg | Confirmado |
+| Migrations | Alembic | Confirmado |
 | Banco de Dados | PostgreSQL | Confirmado |
 | Embeddings/RAG | pgvector (PostgreSQL) | Confirmado |
 | LLM | Ollama (modelos opensource on-premise) | Confirmado |
-| Canal MVP | Telegram Bot API | Confirmado |
+| LLM SDK Python | ollama-python | Confirmado |
+| Canal MVP | Telegram Bot API (aiogram 3.x, async) | Confirmado |
 | Web UI Admin | Next.js (React) | Confirmado |
+| Testes | pytest + pytest-asyncio + httpx | Confirmado |
+| Package Manager | uv (rapido, lockfile deterministico) | Confirmado |
 | Deploy | Docker Compose em VPS | Confirmado |
 | Repo | Separado do AIOX | Confirmado |
 | Container Isolation | Docker (via NanoClaw) | Confirmado |
+| IPC com NanoClaw | Arquivos JSON em diretorios compartilhados | Confirmado |
 
 ---
 
@@ -526,12 +573,14 @@ Interacao:
 - NAO e alterado, NAO e dependencia
 
 ### NanoClaw (orquestrador):
-- Runtime de agents com container isolation
+- Runtime de agents com container isolation (Node.js)
 - Canais de comunicacao (Telegram, WhatsApp, etc.)
 - Agent swarms e memoria
-- Dependencia npm da plataforma
+- **Comunicacao via IPC** (arquivos JSON em diretorios compartilhados)
+- NAO e dependencia Python — roda como processo separado orquestrado via Docker
 
 ### Nossa Plataforma (produto):
+- **Backend Python (FastAPI)** — API Gateway, Lifecycle Manager, Task Router
 - Workflow Engine com mixed executors
 - Admin Web UI (Next.js)
 - Knowledge Base (RAG + pgvector)
