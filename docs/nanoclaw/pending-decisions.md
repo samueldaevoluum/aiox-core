@@ -14,7 +14,6 @@
 | ALTA | 4 | Decidir antes ou durante MVP |
 | MEDIA | 4 | Decidir antes do lancamento |
 | BAIXA | 2 | Pode evoluir depois |
-| ADR (AIOX) | 2 | Propostas do framework AIOX aguardando aprovacao |
 
 ---
 
@@ -140,22 +139,6 @@
 - **Origem:** `architecture-decisions.md` 5.10
 - **Status:** NAO DISCUTIDO
 - **Contexto:** NanoClaw e o framework, nao o produto. Precisamos de um nome.
-
----
-
-## ADRs do AIOX (framework) — aguardando aprovacao
-
-Estas decisoes sao do **framework AIOX**, nao da plataforma. Listadas aqui para referencia.
-
-### ADR-HCS: Health Check System
-- **Arquivo:** `docs/pt/architecture/adr/adr-hcs-health-check-system.md`
-- **Status:** Proposto
-- **Resumo:** Sistema de health check para diagnosticar problemas no AIOX
-
-### ADR-COLLAB-2: Branch Protection / Contribuicao Externa
-- **Arquivo:** `docs/pt/architecture/adr/ADR-COLLAB-2-proposed-configuration.md`
-- **Status:** Proposto
-- **Resumo:** Configuracao de branch protection e workflow de contribuidores externos
 
 ---
 
