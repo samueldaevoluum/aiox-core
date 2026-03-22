@@ -597,7 +597,7 @@ Interacao:
 2. [x] Definir hierarquia empresa → NanoClaw process → NCI (usuario)
 3. [x] Definir sistema de memoria com controle de acesso (3 niveis KB)
 4. [x] Definir fluxo API Gateway → Lifecycle Manager → NCI
-5. [ ] Receber fluxo de decisao correto do Task Router (do fundador)
+5. [x] Receber fluxo de decisao correto do Task Router (definido na secao 3.11)
 6. [ ] Definir integracao com MCP
 7. [ ] Entender e integrar base de conhecimento de gestao
 8. [ ] Definir nome da plataforma
