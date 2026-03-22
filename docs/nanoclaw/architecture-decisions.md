@@ -1,119 +1,187 @@
-# NanoClaw — Architecture Decisions & Session Log
+# Architecture Decisions & Session Log
 
 **Data:** 2026-03-22
-**Status:** Em discussão (pré-PRD)
-**Sessão:** claude/analyze-image-tr45K
+**Status:** Em discussao (pre-PRD)
+**Sessao:** claude/analyze-image-tr45K
 
 ---
 
-## 1. O que é o NanoClaw
+## 1. O que e o NanoClaw
 
-Plataforma de agentes de IA para negócios. Cada empresa (cliente) recebe uma instância com agentes personalizados (RH, Financeiro, Marketing, etc.) que atendem funcionários via canais de comunicação (Telegram, Web Chat, WhatsApp).
+NanoClaw e um **framework open-source existente** de agentes de IA, leve e focado em seguranca. E uma alternativa segura ao OpenClaw.
 
-**Diferença fundamental do AIOX:**
-- AIOX = ferramenta de desenvolvimento de software (agentes para devs)
-- NanoClaw = produto para empresas (agentes para funcionários)
+- **Repo:** github.com/qwibitai/nanoclaw
+- **Site:** nanoclaw.dev
+- **Licenca:** MIT
+- **Tamanho:** ~3.900 linhas de codigo, ~15 arquivos
+- **Runtime:** Node.js, Claude Agent SDK (com suporte a modelos opensource)
+- **Seguranca:** Cada agente roda em container Docker isolado (filesystem, IPC, process space)
+- **Canais nativos:** WhatsApp, Telegram, Slack, Discord, Gmail
+- **Memoria:** CLAUDE.md por grupo/canal (isolada por container)
+- **Features:** Scheduled jobs, agent swarms, web access
+
+### O que o NanoClaw oferece out-of-the-box
+
+| Feature | Descricao |
+|---------|-----------|
+| Container isolation | Cada sessao de agente em Docker proprio |
+| Multi-channel | WhatsApp, Telegram, Slack, Discord, Gmail |
+| Memoria por grupo | CLAUDE.md isolado por canal/grupo |
+| Agent swarms | Multi-agente via Claude Agent SDK |
+| Scheduled jobs | Tarefas recorrentes com cron |
+| Message queue | Per-group com concurrency control |
+| SQLite | Persistencia leve |
+
+### O que NAO tem (e que vamos construir)
+
+| Feature | Nossa plataforma adiciona |
+|---------|--------------------------|
+| Multi-tenant enterprise | Multiplos clientes, isolamento por tenant |
+| PostgreSQL + pgvector | Banco robusto com RAG |
+| Admin Web UI | Interface para gerenciar agents, users, workflows |
+| Workflow Engine | Processos multi-step com mixed executors |
+| Knowledge Base (RAG) | Documentos da empresa processados e consultaveis |
+| Task-first architecture | Workers deterministicos + IA + humano |
+| Modelo de permissoes | RLS, memory_access por role |
+| Integracao com ferramentas | ClickUp, ERPs, etc. via webhooks |
 
 ---
 
-## 2. Decisões Confirmadas
+## 2. Nosso Produto (Plataforma)
 
-### 2.1 Repositório
-- **Decisão:** Repo separado do AIOX
-- **Motivo:** Não misturar complexidades. Deploy independente. Stack própria.
-- **AIOX não será alterado.** Apenas serve como inspiração e ferramenta de criação inicial.
+Estamos construindo uma **plataforma de agentes de IA para negocios** que usa o NanoClaw como orquestrador/dependencia.
 
-### 2.2 Banco de Dados
-- **Decisão:** PostgreSQL
-- **Motivo:** LISTEN/NOTIFY nativo para hot-reload, pgvector para RAG, RLS para multi-tenancy
-- **Não usar Supabase** (PostgreSQL puro)
+```
+Tres pecas distintas:
 
-### 2.3 Canal de Comunicação (MVP)
-- **Decisão:** Telegram (primeiro canal)
-- **Motivo:** API simples, bots gratuitos, boa experiência mobile
+AIOX (inspiracao)              NanoClaw (orquestrador)        Nossa Plataforma (produto)
+─────────────────              ───────────────────────        ──────────────────────────
+Formato rico de agents         Runtime de agentes             Usa NanoClaw como dependencia
+Task-first architecture        Container isolation            Workflow Engine
+@squad-creator                 Multi-channel                  Admin Web UI (Next.js)
+Nao e alterado                 E uma dependencia npm          Knowledge Base (RAG/pgvector)
+                               ~3900 LOC, auditavel           Multi-tenant, PostgreSQL
+                                                              Base de conhecimento de gestao
+                                                              Integracao com ferramentas externas
+```
+
+---
+
+## 3. Decisoes Confirmadas
+
+### 3.1 Repositorio
+- **Decisao:** Repo separado do AIOX
+- **NanoClaw:** Usado como dependencia (npm), nao como fork
+- **AIOX nao sera alterado**
+
+### 3.2 Banco de Dados
+- **Decisao:** PostgreSQL (substituindo SQLite do NanoClaw)
+- **Motivo:** LISTEN/NOTIFY para hot-reload, pgvector para RAG, RLS para multi-tenancy
+
+### 3.3 Canal de Comunicacao (MVP)
+- **Decisao:** Telegram (primeiro canal)
+- **Nota:** NanoClaw ja suporta Telegram nativamente
 - **Futuro:** Web Chat, WhatsApp Business API
 
-### 2.4 Bot Telegram
-- **Decisão:** Um bot por cliente (Opção A)
-- **Motivo:** Cada cliente tem seu @empresaX_bot com token próprio
-- **Não usar bot único** com roteamento
+### 3.4 Bot Telegram
+- **Decisao:** Um bot por cliente
+- **Cada cliente tem seu @empresaX_bot** com token proprio
 
-### 2.5 LLM
-- **Decisão:** Ollama com modelo menor/rápido primeiro (8B)
-- **Motivo:** Economia de recursos, velocidade
-- **Futuro:** Modelo maior (70B) como opção "smart"
+### 3.5 LLM
+- **Decisao:** Modelos opensource on-premise (Ollama, modelo 8B rapido)
+- **Nota:** NanoClaw originalmente usa Claude Agent SDK, mas ja suporta modelos opensource
+- **Continuaremos com modelos on-premise** para controle de custo e privacidade
+- **Futuro:** Modelo maior (70B) como opcao "smart"
 
-### 2.6 Multi-tenancy
-- **MVP:** Uma instância por cliente (Opção A — simples)
-- **Futuro:** Multi-tenant com schemas separados + RLS (Opção B)
-- **Motivo:** MVP testa na empresa do fundador, sem necessidade de multi-tenant ainda
+### 3.6 Multi-tenancy
+- **MVP:** Uma instancia por cliente (simples, testar na propria empresa)
+- **Futuro:** Multi-tenant com schemas separados + RLS
 
-### 2.7 Knowledge Base (MVP)
-- **Decisão:** Fonte 1 — Documentos uploadados (PDF, DOCX)
-- **Fluxo:** Admin faz upload → sistema processa → chunks → embeddings → PostgreSQL (pgvector) → Agent consulta via RAG
-- **Futuro:** Fonte 3 — Integrações com APIs externas (ERP, sistemas)
+### 3.7 Knowledge Base (MVP)
+- **Decisao:** Documentos uploadados (PDF, DOCX)
+- **Fluxo:** Admin upload → chunks → embeddings → pgvector → Agent consulta via RAG
+- **Futuro:** Integracoes com APIs externas (ERP, sistemas)
 
-### 2.8 Web UI Admin
-- **Decisão:** Next.js (React)
-- **Funcionalidades:** Editar agentes, editar usuários, editar permissões, ver logs/conversas
+### 3.8 Web UI Admin
+- **Decisao:** Next.js (React)
+- **Funcionalidades:** Editar agentes, editar usuarios, editar permissoes, ver logs/conversas
 
-### 2.9 Deploy
-- **Decisão:** VPS com Docker (docker-compose)
-- **Stack:** NanoClaw Server + PostgreSQL + Ollama — tudo no mesmo VPS
-- **Futuro:** Separar Ollama em GPU dedicada se necessário
+### 3.9 Deploy
+- **Decisao:** VPS com Docker (docker-compose)
+- **Stack:** Plataforma + NanoClaw + PostgreSQL + Ollama
 
-### 2.10 Detalhamento dos Agentes
-- **Decisão:** Manter TODA a riqueza do formato AIOX
-- **Motivo:** O detalhamento (persona, archetype, communication style, greeting levels, core principles, commands, dependencies) é o que faz os agentes funcionarem bem
-- **Formato:** Adaptado para contexto de negócio (não dev), mas mantendo a mesma profundidade estrutural
+### 3.10 Detalhamento dos Agentes
+- **Decisao:** Manter TODA a riqueza do formato AIOX
+- **Motivo:** O detalhamento (persona, archetype, communication style, greeting levels, core principles, commands, dependencies) e o que faz os agentes funcionarem bem
+- **Formato:** Adaptado para contexto de negocio, mantendo profundidade estrutural
 
-### 2.11 Task-First Architecture
-- **Decisão:** Manter a abordagem task-first do AIOX com tipos de executor
-- **Tipos de executor:**
-  - **WORKER** — Determinístico, sem LLM, sem tokens (ex: consulta saldo férias)
-  - **WORKER+API** — Determinístico com integração externa (ex: abrir chamado)
-  - **CLONE** — Agente de IA processa via Ollama + RAG (ex: analisar documentação)
-  - **HUMANO** — Escala para pessoa real com notificação (ex: contestar avaliação)
-- **Benefício:** ~65% economia de tokens roteando determinístico vs IA
+### 3.11 Task-First Architecture
+- **Decisao:** Manter abordagem task-first com tipos de executor
+- **Tipos:**
+  - **WORKER** — Deterministico, sem LLM, sem tokens (ex: consulta saldo ferias)
+  - **WORKER+API** — Deterministico com integracao externa (ex: abrir chamado)
+  - **CLONE** — Agente de IA processa via LLM + RAG (ex: analisar documentacao)
+  - **HUMANO** — Escala para pessoa real com notificacao (ex: contestar avaliacao)
+- **Beneficio:** ~65% economia de tokens roteando deterministico vs IA
 
 ---
 
-## 3. Arquitetura Consolidada
+## 4. Arquitetura Consolidada
 
-### 3.1 Relação AIOX ↔ NanoClaw
+### 4.1 Camadas
 
 ```
-AIOX (CLI, ferramenta de dev)           NanoClaw (Servidor, produto)
-─────────────────────────────           ────────────────────────────
-@squad-creator gera templates  ──────▶  PostgreSQL armazena agents
-de agents iniciais                      Web UI edita agents
-                                        NanoClaw Server carrega em memória
-                                        Hot-reload via LISTEN/NOTIFY
+┌─────────────────────────────────────────────────────────────┐
+│                    NOSSA PLATAFORMA                          │
+│                                                              │
+│  ┌───────────┐  ┌──────────────┐  ┌───────────────────┐    │
+│  │ Admin UI  │  │  Workflow    │  │  Knowledge Base   │    │
+│  │ (Next.js) │  │  Engine     │  │  (RAG/pgvector)   │    │
+│  └───────────┘  └──────────────┘  └───────────────────┘    │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │              NanoClaw (orquestrador)                    │  │
+│  │                                                         │  │
+│  │  ┌─────────┐  ┌──────────┐  ┌────────────┐            │  │
+│  │  │Telegram │  │ Slack    │  │ WhatsApp   │            │  │
+│  │  │Channel  │  │ Channel  │  │ Channel    │            │  │
+│  │  └────┬────┘  └────┬─────┘  └─────┬──────┘            │  │
+│  │       └─────────────┼──────────────┘                    │  │
+│  │                     ▼                                    │  │
+│  │           ┌─────────────────┐                           │  │
+│  │           │  Agent Runtime  │  (container isolation)    │  │
+│  │           │  + Swarms       │                           │  │
+│  │           └─────────────────┘                           │  │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                    Task Router                         │  │
+│  │  mensagem → [WORKER] | [WORKER+API] | [CLONE] | [HUMAN] │
+│  └───────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌───────────┐  ┌───────────┐  ┌──────────┐  ┌──────────┐ │
+│  │PostgreSQL │  │ Ollama    │  │ External │  │ Webhook  │  │
+│  │+ pgvector │  │ (LLM)    │  │ APIs     │  │ Receiver │  │
+│  └───────────┘  └───────────┘  └──────────┘  └──────────┘ │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-- AIOX é usado APENAS para criação inicial de templates de agentes
-- NanoClaw é 100% independente em runtime
-- Nenhuma dependência de código entre os dois
-
-### 3.2 Fonte de Verdade dos Agentes
+### 4.2 Fonte de Verdade dos Agentes
 
 ```
 PostgreSQL (fonte de verdade)
          │
          ├── Web UI Admin edita direto no banco
          │
-         ├── NanoClaw Server carrega em memória (Map<id, config>)
+         ├── Plataforma carrega em memoria (Map<id, config>)
          │
          └── Hot-reload via PostgreSQL LISTEN/NOTIFY
-             Quando admin salva → NOTIFY agent_changed → server recarrega
+             Admin salva → NOTIFY agent_changed → server recarrega
 ```
 
-### 3.3 Formato do Agente NanoClaw
-
-Mantém a mesma riqueza do AIOX, adaptado para negócio:
+### 4.3 Formato do Agente (inspirado no AIOX, adaptado para negocio)
 
 ```yaml
-# ─── SEÇÕES MANTIDAS DO AIOX (mesma estrutura) ───
 agent:
   name: Helena
   id: rh
@@ -126,23 +194,22 @@ persona_profile:
     tone: acolhedor
     vocabulary: [orientar, esclarecer, acolher, encaminhar]
     greeting_levels:
-      minimal: "Olá! Sou a Helena, assistente de RH."
-      named: "Olá {user_name}! ..."
-      archetypal: "Olá {user_name}! Sou a Helena, guardiã das políticas..."
+      minimal: "Ola! Sou a Helena, assistente de RH."
+      named: "Ola {user_name}! ..."
+      archetypal: "Ola {user_name}! Sou a Helena, guardia das politicas..."
     signature_closing: "Helena | RH Digital"
 
 persona:
   role: Especialista em Recursos Humanos
-  style: Acolhedor, preciso, empático, profissional
-  identity: (descrição completa)
-  focus: (escopo específico)
+  style: Acolhedor, preciso, empatico, profissional
+  identity: (descricao completa)
+  focus: (escopo especifico)
 
 core_principles:
-  - CRITICAL: Nunca inventar informações
-  - CRITICAL: Dados salariais APENAS com permissão salary_view
+  - CRITICAL: Nunca inventar informacoes
+  - CRITICAL: Dados salariais APENAS com permissao salary_view
   - CRITICAL: Sempre referenciar fonte
 
-# ─── SEÇÕES ADAPTADAS PARA NANOCLAW ───
 commands:
   - name: consultar-politica
     type: clone
@@ -150,7 +217,7 @@ commands:
 
   - name: saldo-ferias
     type: worker
-    match_patterns: ["saldo de férias", "quantos dias de férias"]
+    match_patterns: ["saldo de ferias", "quantos dias de ferias"]
     executor:
       function: erp_query
       params: { module: vacation, query: balance }
@@ -193,51 +260,29 @@ autoNanoClaw:
   temperature: 0.3
 ```
 
-### 3.4 Tipos de Memória
+### 4.4 Tipos de Memoria
 
-1. **Conversa atual** (efêmera) — mensagens do chat em andamento, morre com a sessão
-2. **Histórico de conversas** (persistente) — gravado no PostgreSQL, pesquisável
-3. **Memória do agent sobre o usuário** (aprendida) — preferências acumuladas ao longo do tempo
-4. **Knowledge base** (estática) — documentos da empresa processados via RAG
+1. **Conversa atual** (efemera) — morre com a sessao
+2. **Historico de conversas** (persistente) — PostgreSQL, pesquisavel
+3. **Memoria do agent sobre o usuario** (aprendida) — preferencias acumuladas
+4. **Knowledge base** (estatica) — documentos da empresa via RAG
 
-### 3.5 NCI (NanoClaw Instance)
+### 4.5 Workflow Engine
 
-Cada funcionário que conecta recebe uma NCI — um objeto em memória (NÃO um processo separado):
-
-```
-NCI Manager
-├── sessions: Map<userId, NCI>
-│
-├── createSession(userId):
-│   1. Carrega perfil do user do PostgreSQL
-│   2. Filtra agents permitidos
-│   3. Conecta memory gateway com RLS
-│   4. Cria NCISession
-│
-└── 50 funcionários = 50 objetos no Map
-    1 Ollama = compartilhado por todos (com fila)
-```
-
-### 3.6 Workflow Engine
-
-Peça fundamental para orquestrar processos de negócio multi-step com mixed executors:
+Orquestra processos de negocio multi-step com mixed executors:
 
 ```
 Workflow Engine
-├── Define processos em YAML (ex: admissão com 10 steps)
-├── Cada step tem um executor type: worker | worker_api | clone | human
+├── Define processos em YAML (ex: admissao com 10 steps)
+├── Cada step tem executor type: worker | worker_api | clone | human
 ├── Integra com ferramentas externas (ClickUp, ERPs)
-├── Suporta human-in-the-loop bidirecional
-│   ├── Humano marca @agente no ClickUp → webhook → NanoClaw processa
+├── Human-in-the-loop bidirecional
+│   ├── Humano marca @agente no ClickUp → webhook → plataforma processa
 │   └── Agente comenta no ClickUp → marca @humano → notifica
 ├── Completion triggers: external_event, timeout, condition
-├── Gates de decisão (humano aprova/reprova)
+├── Gates de decisao (humano aprova/reprova)
 └── SLA tracking por step e por processo
 ```
-
-**Webhook Receiver:**
-- POST /webhooks/{platform} recebe eventos de ferramentas externas
-- Match com workflow_run ativo → avança step → dispara próximo executor
 
 **Schema PostgreSQL do Workflow Engine:**
 ```sql
@@ -248,182 +293,152 @@ webhook_events (id, source, event_type, payload_json, matched_workflow_run_id)
 integrations (id, platform, config_json, credentials_encrypted)
 ```
 
-### 3.7 Chat vs. Workflow — Dois Sistemas que Conversam
+### 4.6 Chat vs. Workflow — Dois Sistemas que Conversam
 
 ```
-CHAT (NCI):                     WORKFLOW ENGINE:
+CHAT (via NanoClaw):            WORKFLOW ENGINE:
 - Conversa livre                - Processo estruturado
-- Funcionário pergunta algo     - Sistema executa steps
+- Funcionario pergunta algo     - Sistema executa steps
 - Agente responde               - Mixed executors
 - Stateless (por conversa)      - Stateful (por processo)
 - Sempre ativo                  - Ativado por trigger
 
-Interação:
-- Chat pode iniciar workflow:    "Helena, inicie admissão do João"
+Interacao:
+- Chat pode iniciar workflow:    "Helena, inicie admissao do Joao"
 - Workflow pode usar chat agent: Step 3 usa Helena pra analisar docs
-- Workflow pode notificar via chat: "João, seu contrato está pronto"
-```
-
----
-
-## 4. Arquitetura Visual
-
-```
-┌──────────────────────────────────────────────────────────┐
-│                  NanoClaw Server                          │
-│                                                           │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐                  │
-│  │Telegram │  │ Web Chat │  │External │                   │
-│  │Channel  │  │ Channel  │  │Webhooks │                   │
-│  └────┬────┘  └────┬────┘  └────┬────┘                   │
-│       └─────────────┼───────────┘                         │
-│                     ▼                                     │
-│           ┌─────────────────┐                             │
-│           │  Message Router │                             │
-│           └────────┬────────┘                             │
-│                    │                                      │
-│        ┌───────────┼───────────┐                          │
-│        ▼                       ▼                          │
-│  ┌──────────┐          ┌──────────────┐                   │
-│  │ NCI      │          │  WORKFLOW    │                    │
-│  │ (chat)   │          │  ENGINE     │                    │
-│  └──────────┘          └──────┬──────┘                    │
-│                               │                           │
-│              ┌────────────────┼────────────────┐          │
-│              ▼                ▼                ▼          │
-│         [WORKER]        [CLONE/AI]        [HUMAN]         │
-│         código          Ollama            notifica         │
-│         direto          + RAG             e aguarda        │
-│                                                           │
-│  ┌────────────────────────────────────────────────────┐   │
-│  │               PostgreSQL                            │  │
-│  │  agents │ users │ workflows │ knowledge │ vectors  │   │
-│  │  conversations │ workflow_runs │ step_runs │ logs   │   │
-│  └────────────────────────────────────────────────────┘   │
-│                                                           │
-│  ┌──────────────┐  ┌───────────────┐  ┌──────────────┐   │
-│  │ Agent Cache  │  │ Ollama (LLM)  │  │ External APIs│   │
-│  │ hot-reload   │  │ fast/smart    │  │ ClickUp, ERP │   │
-│  │ via NOTIFY   │  │ models        │  │ Google, etc  │   │
-│  └──────────────┘  └───────────────┘  └──────────────┘   │
-└──────────────────────────────────────────────────────────┘
+- Workflow pode notificar via chat: "Joao, seu contrato esta pronto"
 ```
 
 ---
 
 ## 5. Pontos Pendentes
 
-### 5.1 Fluxo de Decisão do Task Router
+### 5.1 Fluxo de Decisao do Task Router
 - **Status:** PENDENTE
-- **Contexto:** O fluxo proposto (match exato → worker, match ação → worker+API, senão → LLM) foi considerado diferente pelo fundador
-- **Ação:** Fundador vai enviar o fluxo correto em sessão futura
-- **Impacto:** Afeta como o NCI decide qual executor usar para cada mensagem
+- **Contexto:** O fluxo proposto (match exato → worker, match acao → worker+API, senao → LLM) foi considerado diferente pelo fundador
+- **Acao:** Fundador vai enviar o fluxo correto em sessao futura
+- **Impacto:** Afeta como a plataforma decide qual executor usar para cada mensagem
 
-### 5.2 Configuração e Integração com MCP
+### 5.2 Configuracao e Integracao com MCP
 - **Status:** PENDENTE
-- **Contexto:** O AIOX usa MCP (Model Context Protocol) para ferramentas externas. Como o NanoClaw vai usar/integrar com MCP?
+- **Contexto:** Como a plataforma vai usar/integrar com MCP (Model Context Protocol)?
 - **Perguntas em aberto:**
-  - NanoClaw terá seu próprio MCP server?
-  - Os tools dos agents (knowledge_search, erp_query) serão implementados como MCP tools?
-  - Como o Ollama se conecta com MCP tools? (Ollama não suporta MCP nativamente — precisa de bridge)
-  - O NanoClaw expõe MCP para que outras ferramentas se conectem a ele?
-- **Impacto:** Define como tools são implementados e como o LLM acessa funcionalidades externas
+  - A plataforma tera seu proprio MCP server?
+  - Os tools dos agents serao implementados como MCP tools?
+  - Como o modelo on-premise se conecta com MCP tools?
+  - A plataforma expoe MCP para que outras ferramentas se conectem?
+- **Impacto:** Define como tools sao implementados e como o LLM acessa funcionalidades externas
 
-### 5.3 Base de Conhecimento de Gestão de Negócio
+### 5.3 Base de Conhecimento de Gestao de Negocio
 - **Status:** PENDENTE
-- **Contexto:** O fundador tem uma base de conhecimento sobre gestão de negócios que quer usar para tornar o NanoClaw/plataforma especialista em gestão
+- **Contexto:** O fundador tem uma base de conhecimento sobre gestao de negocios que quer usar para tornar a plataforma especialista em gestao
 - **Perguntas em aberto:**
   - Qual o formato dessa base? (PDFs, documentos, frameworks, metodologias?)
-  - É conteúdo proprietário ou público?
-  - Como integrar: como knowledge base padrão (RAG) ou como parte do system prompt dos agents?
-  - Isso diferencia o NanoClaw de concorrentes — os agents não apenas respondem, mas aconselham com base em frameworks de gestão comprovados?
-  - Exemplos: se um gestor pergunta sobre estrutura organizacional, o agent responde com base em metodologias reais (OKR, BSC, Lean, etc.) em vez de respostas genéricas?
-- **Impacto:** Diferencial competitivo. Define se NanoClaw é "chatbot com docs" ou "consultor de gestão com IA"
+  - E conteudo proprietario ou publico?
+  - Como integrar: como knowledge base padrao (RAG) ou como parte do system prompt?
+  - Diferencial competitivo: agents aconselham com base em frameworks comprovados (OKR, BSC, Lean)?
+- **Impacto:** Define se a plataforma e "chatbot com docs" ou "consultor de gestao com IA"
 
-### 5.4 Agents Genéricos para Implantação
-- **Status:** PENDENTE (decidido não criar nesta sessão)
-- **Contexto:** Pretende criar agents genéricos (RH, Financeiro, Marketing, Vendas, Suporte, Jurídico) para facilitar implantação em novos clientes. Ainda não definiu quais criar primeiro.
-- **Ação:** Definir em sessão futura após PRD
-
-### 5.5 Estrutura do Repo NanoClaw
+### 5.4 Agents Genericos para Implantacao
 - **Status:** PENDENTE
-- **Contexto:** Repo separado confirmado, mas estrutura de diretórios não definida
+- **Contexto:** Pretende criar agents genericos (RH, Financeiro, Marketing, Vendas, Suporte, Juridico)
+- **Acao:** Definir quais criar primeiro apos PRD
+
+### 5.5 Estrutura do Repo da Plataforma
+- **Status:** PENDENTE
+- **Contexto:** Repo separado, NanoClaw como dependencia (nao fork)
 - **Proposta inicial:**
   ```
-  nanoclaw/
-  ├── server/              # NanoClaw Server (Node.js)
-  │   ├── core/            # NCI Manager, Auth, Agent Loader, Memory Gateway
-  │   ├── channels/        # Telegram, Web Chat
+  nossa-plataforma/
+  ├── server/              # Backend (Node.js)
+  │   ├── core/            # Auth, Agent Loader, Memory Gateway
   │   ├── workflow-engine/ # Workflow Engine
-  │   ├── providers/       # Ollama Provider
-  │   └── webhooks/        # Webhook Receiver
+  │   ├── webhooks/        # Webhook Receiver
+  │   └── providers/       # Ollama Provider
   ├── web/                 # Next.js Admin UI
-  ├── db/                  # Migrations, seeds
+  ├── db/                  # Migrations, seeds, RLS policies
   ├── docker/              # docker-compose, Dockerfiles
-  └── docs/                # Documentação
+  ├── agents/              # Agent definitions (templates)
+  └── docs/                # Documentacao
   ```
+- **NanoClaw:** importado como `npm install nanoclaw` ou similar
 
-### 5.6 Processo de Admissão (Exemplo de Workflow)
-- **Status:** Discutido como exemplo, não implementado
-- **Contexto:** Processo de 10 steps com mixed executors, integração ClickUp, human-in-the-loop bidirecional
-- **Ação:** Usar como caso de teste do Workflow Engine quando implementado
+### 5.6 Processo de Admissao (Exemplo de Workflow)
+- **Status:** Discutido como exemplo, nao implementado
+- **Contexto:** 10 steps com mixed executors, integracao ClickUp, human-in-the-loop bidirecional
+- **Acao:** Usar como caso de teste do Workflow Engine
 
-### 5.7 Segurança e RLS
+### 5.7 Seguranca e RLS
 - **Status:** PENDENTE
-- **Contexto:** Mencionado que dados salariais só para perfis com permissão. Precisa definir:
-  - Modelo de permissões detalhado
+- **Perguntas:**
+  - Modelo de permissoes detalhado
   - RLS policies no PostgreSQL
   - Como memory_access se traduz em queries SQL
-  - Audit log de acessos sensíveis
+  - Audit log de acessos sensiveis
 
 ### 5.8 Modelo de Pricing/Billing
-- **Status:** NÃO DISCUTIDO
-- **Contexto:** Como cobrar clientes? Por usuário? Por mensagem? Por agente?
+- **Status:** NAO DISCUTIDO
+
+### 5.9 Nome da Plataforma
+- **Status:** NAO DISCUTIDO
+- **Contexto:** NanoClaw e o framework, nao nosso produto. Precisamos de um nome para a plataforma.
 
 ---
 
-## 6. Stack Técnica Consolidada
+## 6. Stack Tecnica Consolidada
 
 | Componente | Tecnologia | Status |
 |------------|-----------|--------|
+| Orquestrador de Agents | NanoClaw (framework OSS) | Confirmado |
 | Backend/Server | Node.js | Confirmado |
 | Banco de Dados | PostgreSQL | Confirmado |
 | Embeddings/RAG | pgvector (PostgreSQL) | Confirmado |
-| LLM | Ollama (modelo 8B) | Confirmado |
+| LLM | Ollama (modelos opensource on-premise) | Confirmado |
 | Canal MVP | Telegram Bot API | Confirmado |
 | Web UI Admin | Next.js (React) | Confirmado |
 | Deploy | Docker Compose em VPS | Confirmado |
 | Repo | Separado do AIOX | Confirmado |
+| Container Isolation | Docker (via NanoClaw) | Confirmado |
 
 ---
 
-## 7. O que o AIOX contribui (e o que NÃO)
+## 7. Relacao entre as tres pecas
 
-### Contribui (inspiração/ferramenta):
-- `@squad-creator` para gerar templates iniciais de agents
-- Formato rico de agent definition como referência
-- Task-first architecture como padrão
-- Workflow YAML format como inspiração
+### AIOX (inspiracao):
+- Formato rico de agent definition como referencia
+- Task-first architecture como padrao
+- @squad-creator para gerar templates iniciais de agents
+- NAO e alterado, NAO e dependencia
 
-### NÃO contribui (NanoClaw é independente):
-- Nenhum código do AIOX é importado/reutilizado em runtime
-- Nenhum módulo do AIOX é dependência do NanoClaw
-- Agent Config Loader, Activation Pipeline, etc. são do AIOX — NanoClaw tem os próprios
-- AIOX não será alterado para acomodar NanoClaw
+### NanoClaw (orquestrador):
+- Runtime de agents com container isolation
+- Canais de comunicacao (Telegram, WhatsApp, etc.)
+- Agent swarms e memoria
+- Dependencia npm da plataforma
 
----
-
-## 8. Próximos Passos
-
-1. [ ] Receber fluxo de decisão correto do Task Router (do fundador)
-2. [ ] Definir integração com MCP
-3. [ ] Entender e integrar base de conhecimento de gestão
-4. [ ] Criar PRD completo do NanoClaw
-5. [ ] Definir estrutura do repo separado
-6. [ ] Definir quais agents genéricos criar primeiro
-7. [ ] Implementar MVP
+### Nossa Plataforma (produto):
+- Workflow Engine com mixed executors
+- Admin Web UI (Next.js)
+- Knowledge Base (RAG + pgvector)
+- PostgreSQL (substituindo SQLite do NanoClaw)
+- Multi-tenant enterprise
+- Base de conhecimento de gestao (diferencial)
+- Integracoes externas (ClickUp, ERPs)
 
 ---
 
-*Documento gerado na sessão claude/analyze-image-tr45K em 2026-03-22*
-*Synkra NanoClaw — Pre-PRD Architecture Decisions*
+## 8. Proximos Passos
+
+1. [ ] Receber fluxo de decisao correto do Task Router (do fundador)
+2. [ ] Definir integracao com MCP
+3. [ ] Entender e integrar base de conhecimento de gestao
+4. [ ] Definir nome da plataforma
+5. [ ] Criar PRD completo
+6. [ ] Definir estrutura do repo separado
+7. [ ] Definir quais agents genericos criar primeiro
+8. [ ] Implementar MVP
+
+---
+
+*Documento atualizado na sessao claude/analyze-image-tr45K em 2026-03-22*
+*Correcao: NanoClaw e framework OSS (dependencia), nao o produto*
