@@ -3,142 +3,187 @@
 > **Data:** 2026-03-22
 > **Tenant:** Evoluum (single-tenant)
 > **Primeiro processo:** Admissao (RH)
-> **Status:** Pronto para implementar
+> **Status:** Em definicao
 
 ---
 
-## 1. Visao Geral
+## 1. Como Funciona (resumo honesto)
 
-```
-                         Colaboradores Evoluum
-                                │
-                                │ Telegram
-                                ▼
-┌──────────────────────────────────────────────────────────────┐
-│                     VPS (Docker Compose)                      │
-│                                                               │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │              FastAPI Gateway (:8000)                    │  │
-│  │                                                        │  │
-│  │  /webhook/telegram    ← Telegram Bot API               │  │
-│  │  /webhook/asana       ← Asana events                   │  │
-│  │  /webhook/pipedrive   ← Pipedrive events               │  │
-│  │                                                        │  │
-│  │  Tool Server (funcoes que agentes chamam):              │  │
-│  │    Tools Asana (a definir com processos RH)             │  │
-│  │    Tools Pipedrive (a definir com processos Comercial)  │  │
-│  │    Tools internos (a definir conforme necessidade)      │  │
-│  └───────────┬──────────────────────────┬─────────────────┘  │
-│              │ IPC (JSON)               │ HTTP                │
-│              ▼                          ▼                     │
-│  ┌─────────────────────┐    ┌──────────────────┐             │
-│  │   NanoClaw (:3000)  │    │  PostgreSQL      │             │
-│  │                     │    │  (:5432)         │             │
-│  │  Telegram handler   │    │                  │             │
-│  │  Agent routing      │    │  usuarios        │             │
-│  │  Message queue      │    │  conversas       │             │
-│  │  CLAUDE.md memory   │    │  agent_configs   │             │
-│  │  Claude Agent SDK   │    │  tool_calls      │             │
-│  │                     │    │  webhook_events  │             │
-│  │  Agentes:           │    │  workflows       │             │
-│  │   - Helena (RH)     │    │                  │             │
-│  │   - Comercial (TBD) │    │                  │             │
-│  └─────────────────────┘    └──────────────────┘             │
-│                                                               │
-│  ┌─────────────────────┐                                     │
-│  │   Nginx (:443)      │ ← SSL termination, reverse proxy   │
-│  └─────────────────────┘                                     │
-└──────────────────────────────────────────────────────────────┘
-                                │
-                    ┌───────────┼───────────┐
-                    ▼           ▼           ▼
-              Claude API    Asana API   Pipedrive API
-              (Anthropic)   (REST)      (REST)
-```
+O NanoClaw ja faz a maior parte do trabalho:
+- Recebe mensagens do Telegram (handler nativo)
+- Usa Claude Agent SDK pra processar (Claude e o LLM)
+- CLAUDE.md define quem sao os agentes, regras, tom
+- Claude decide sozinho qual agente responde e se precisa chamar tools
+- Function calling: Claude chama tools que sao endpoints HTTP
+
+**O que precisamos construir:**
+- FastAPI como **Tool Server** (funcoes que os agentes chamam: Asana, Pipedrive, DB)
+- FastAPI como **Webhook Receiver** (recebe eventos do Asana e Pipedrive)
+- PostgreSQL pra dados persistentes
+- Configuracao do NanoClaw (CLAUDE.md, agentes, tools)
+
+**O que o NanoClaw ja faz e NAO precisamos reimplementar:**
+- Telegram (recebe/envia mensagens)
+- Routing (Claude decide baseado no CLAUDE.md)
+- Message queue por grupo
+- Memoria por grupo (CLAUDE.md)
+- Container isolation por sessao
 
 ---
 
-## 2. Dois Processos, Responsabilidades Claras
-
-### FastAPI Gateway — o que FAZ
-
-| Responsabilidade | Detalhe |
-|-----------------|---------|
-| Recebe webhooks | Telegram, Asana, Pipedrive |
-| Auth simples | Identifica usuario pelo Telegram user_id |
-| Tool Server | Funcoes Python que os agentes do NanoClaw chamam |
-| Integracoes | SDK Asana, SDK Pipedrive, queries PostgreSQL |
-| Webhook bidirecional | Asana/Pipedrive notifica → FastAPI processa → envia pro NanoClaw |
-| Logging | Registra tool_calls, webhook_events no PostgreSQL |
-
-### NanoClaw — o que FAZ
-
-| Responsabilidade | Detalhe |
-|-----------------|---------|
-| Orquestra agentes | Helena (RH), Comercial (futuro) |
-| Routing | Hybrid Router 4 niveis (name → pattern → LLM → concierge) |
-| LLM | Claude Agent SDK (ja suporta Claude API nativamente) |
-| Memoria | CLAUDE.md por grupo/canal |
-| Message queue | Fila por grupo com concurrency control |
-| Container isolation | Sessoes isoladas por grupo |
-| Function calling | Agentes chamam tools expostos pelo FastAPI |
-
-### Como conversam (IPC)
+## 2. Arquitetura Real
 
 ```
-NanoClaw agente precisa criar task no Asana
-    │
-    ▼
-NanoClaw faz function call: asana_create_task({project: "admissao", name: "..."})
-    │
-    ▼
-FastAPI Tool Server recebe, valida, executa via Asana SDK
-    │
-    ▼
-Retorna resultado pro NanoClaw → agente continua conversa
+Colaboradores Evoluum
+      │
+      │ Telegram Bot API
+      ▼
+┌─────────────────────────────────────────────────────────┐
+│                    VPS (Docker Compose)                   │
+│                                                          │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │              NanoClaw (:3000)                       │  │
+│  │                                                     │  │
+│  │  Telegram handler (nativo)                          │  │
+│  │  Claude Agent SDK → Claude API                      │  │
+│  │  CLAUDE.md = system prompt com agentes + regras     │  │
+│  │  Message queue por grupo                            │  │
+│  │  Memoria por grupo                                  │  │
+│  │                                                     │  │
+│  │  Quando Claude precisa agir:                        │  │
+│  │    function call → HTTP request → FastAPI            │  │
+│  └──────────────────────┬──────────────────────────────┘  │
+│                         │ HTTP (function calling)         │
+│                         ▼                                 │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │              FastAPI (:8000)                        │  │
+│  │                                                     │  │
+│  │  TOOL SERVER (o que os agentes chamam):             │  │
+│  │    /tools/* → executa e retorna resultado           │  │
+│  │    Conecta com: Asana SDK, Pipedrive SDK, DB        │  │
+│  │                                                     │  │
+│  │  WEBHOOK RECEIVER (eventos externos):               │  │
+│  │    /webhook/asana → evento chega, processa           │  │
+│  │    /webhook/pipedrive → evento chega, processa       │  │
+│  │    Pode notificar usuario via Telegram Bot API       │  │
+│  │                                                     │  │
+│  │  LOGGING:                                           │  │
+│  │    Registra tool_calls, webhook_events no PostgreSQL │  │
+│  └──────────────────────┬──────────────────────────────┘  │
+│                         │                                 │
+│                         ▼                                 │
+│  ┌──────────────────────────────┐                        │
+│  │  PostgreSQL (:5432)          │                        │
+│  │                              │                        │
+│  │  users, tool_calls,          │                        │
+│  │  webhook_events, processes   │                        │
+│  └──────────────────────────────┘                        │
+│                                                          │
+│  ┌──────────────────────────────┐                        │
+│  │  Nginx (:443)                │ ← SSL, reverse proxy   │
+│  └──────────────────────────────┘                        │
+│                                                          │
+└─────────────────────────────────────────────────────────┘
+              │              │              │
+              ▼              ▼              ▼
+        Claude API      Asana API     Pipedrive API
+        (Anthropic)     (REST)        (REST)
 ```
 
-O NanoClaw ja tem suporte nativo a function calling via Claude Agent SDK.
-Os tools sao registrados como funcoes que o agente pode chamar.
-FastAPI expoe essas funcoes como endpoints HTTP que o NanoClaw consome.
+### Diferenca-chave vs versao anterior
+
+| Antes (errado) | Agora (correto) |
+|----------------|-----------------|
+| FastAPI recebe Telegram e repassa pro NanoClaw | NanoClaw recebe Telegram direto (nativo) |
+| IPC via arquivos JSON | HTTP normal (function calling) |
+| Hybrid Router implementado por nos | Claude decide routing via CLAUDE.md |
+| agent_configs no PostgreSQL | Agentes em YAML dentro do NanoClaw |
 
 ---
 
-## 3. Fluxo: Mensagem do Telegram
+## 3. Fluxos
+
+### Fluxo 1: Mensagem do Telegram (mais comum)
 
 ```
-1. Colaborador manda mensagem no Telegram
-2. Telegram Bot API envia webhook para FastAPI (/webhook/telegram)
+1. Colaborador manda: "Helena, como esta a admissao do Joao?"
+2. Telegram → NanoClaw (handler nativo)
+3. NanoClaw → Claude Agent SDK → Claude API
+   System prompt (CLAUDE.md) contem:
+     - Agentes disponiveis (Helena RH, Comercial)
+     - Regras de cada agente
+     - Tools disponiveis (asana, pipedrive, db, etc)
+4. Claude interpreta: "usuario quer status de admissao, sou Helena"
+5. Claude faz function call: get_process_status(type="admissao", name="Joao")
+6. NanoClaw envia HTTP request: POST http://fastapi:8000/tools/get_process_status
+7. FastAPI executa: consulta PostgreSQL + Asana API
+8. FastAPI retorna resultado JSON
+9. Claude recebe resultado e formula resposta no tom da Helena
+10. NanoClaw envia resposta pro Telegram
+```
+
+### Fluxo 2: Webhook do Asana (bidirecional)
+
+```
+1. Alguem completa task no Asana (ex: "Documentos recebidos")
+2. Asana envia webhook → FastAPI (/webhook/asana)
 3. FastAPI:
-   - Identifica usuario (telegram user_id → db)
-   - Loga mensagem
-   - Encaminha para NanoClaw via IPC
-4. NanoClaw:
-   - Hybrid Router identifica agente (ex: "Helena" → RH)
-   - Task Router identifica command (ex: "admissao" → processo)
-   - Executor dispatch:
-     - Worker? → executa script local
-     - Worker+API? → chama FastAPI tool (ex: asana_create_task)
-     - Agente? → Claude API gera resposta com function calling
-   - Monta resposta com tom do agente
-5. NanoClaw retorna resposta via IPC
-6. FastAPI envia resposta pro Telegram
+   - Valida assinatura
+   - Identifica processo relacionado (tabela processes)
+   - Loga evento (tabela webhook_events)
+   - Decide acao:
+     a) Notificar usuario via Telegram Bot API → envia mensagem direto
+     b) Apenas registrar → salva e fim
 ```
 
-## 4. Fluxo: Webhook do Asana (bidirecional)
+### Fluxo 3: Webhook do Pipedrive
 
 ```
-1. Alguem completa task no Asana
-2. Asana envia webhook para FastAPI (/webhook/asana)
-3. FastAPI:
-   - Valida assinatura do webhook
-   - Identifica qual processo/workflow essa task pertence
-   - Loga evento no PostgreSQL
-   - Determina acao:
-     a) Notificar colaborador via Telegram? → envia mensagem
-     b) Acionar proximo step do processo? → encaminha pro NanoClaw
-     c) Apenas registrar? → salva e fim
+1. Deal muda de stage no Pipedrive
+2. Pipedrive envia webhook → FastAPI (/webhook/pipedrive)
+3. FastAPI processa (mesmo padrao do Asana)
 ```
+
+---
+
+## 4. O que Cada Peca Faz
+
+### NanoClaw (ja existe, configuramos)
+
+| Item | Detalhe |
+|------|---------|
+| **Telegram** | Handler nativo — recebe e envia mensagens |
+| **LLM** | Claude Agent SDK — envia mensagem + tools pro Claude API |
+| **CLAUDE.md** | System prompt: define agentes, regras, tom, tools disponiveis |
+| **Function calling** | Claude decide chamar tools → NanoClaw faz HTTP call pro FastAPI |
+| **Memoria** | CLAUDE.md por grupo (persiste contexto da conversa) |
+| **Message queue** | Fila por grupo, concurrency control |
+
+**O que configuramos no NanoClaw:**
+- CLAUDE.md com definicoes dos agentes (Helena, Comercial)
+- Lista de tools disponiveis (endpoints do FastAPI)
+- Token do Telegram Bot
+- URL do FastAPI (para function calling)
+- Chave da Anthropic API
+
+### FastAPI (construimos)
+
+| Item | Detalhe |
+|------|---------|
+| **Tool Server** | Endpoints HTTP que os agentes chamam via function calling |
+| **Webhook Receiver** | Recebe eventos do Asana e Pipedrive |
+| **Notificacoes** | Envia mensagens pro Telegram (via Bot API) quando webhook chega |
+| **Logging** | Registra tool_calls e webhook_events no PostgreSQL |
+| **DB Access** | SQLAlchemy + asyncpg para PostgreSQL |
+
+### PostgreSQL (configuramos)
+
+| Tabela | Para que |
+|--------|---------|
+| **users** | Colaboradores Evoluum (telegram_id, nome, departamento) |
+| **tool_calls** | Audit log de todas as chamadas de tools |
+| **webhook_events** | Eventos recebidos do Asana e Pipedrive |
+| **processes** | Acompanhamento de processos (admissao, etc) |
 
 ---
 
@@ -146,57 +191,43 @@ FastAPI expoe essas funcoes como endpoints HTTP que o NanoClaw consome.
 
 ```
 plataforma/
-├── docker-compose.yml           # Orquestra tudo
-├── .env                         # Secrets (API keys, tokens)
+├── docker-compose.yml
+├── .env                         # Secrets
+├── .env.example                 # Template
 │
-├── gateway/                     # FastAPI (Python)
+├── gateway/                     # FastAPI (Python) — o que CONSTRUIMOS
 │   ├── Dockerfile
-│   ├── pyproject.toml           # Dependencias (uv)
+│   ├── pyproject.toml           # uv
 │   ├── app/
-│   │   ├── main.py              # FastAPI app, startup
+│   │   ├── main.py              # FastAPI app
 │   │   ├── config.py            # Settings (pydantic-settings)
-│   │   │
-│   │   ├── api/                 # Rotas
-│   │   │   ├── webhooks.py      # /webhook/telegram, /webhook/asana, /webhook/pipedrive
-│   │   │   └── tools.py         # /tools/* (endpoints que NanoClaw chama)
-│   │   │
-│   │   ├── services/            # Logica de negocio
+│   │   ├── api/
+│   │   │   ├── tools.py         # /tools/* — endpoints pro NanoClaw chamar
+│   │   │   └── webhooks.py      # /webhook/asana, /webhook/pipedrive
+│   │   ├── services/
 │   │   │   ├── asana.py         # Asana SDK wrapper
 │   │   │   ├── pipedrive.py     # Pipedrive SDK wrapper
-│   │   │   ├── telegram.py      # Telegram Bot API (enviar mensagens)
-│   │   │   └── nanoclaw.py      # IPC com NanoClaw
-│   │   │
-│   │   ├── models/              # SQLAlchemy models
-│   │   │   ├── user.py
-│   │   │   ├── conversation.py
-│   │   │   ├── tool_call.py
-│   │   │   └── webhook_event.py
-│   │   │
-│   │   └── schemas/             # Pydantic schemas
-│   │       ├── telegram.py
-│   │       ├── asana.py
-│   │       └── pipedrive.py
-│   │
+│   │   │   └── telegram.py      # Enviar mensagens (notificacoes de webhooks)
+│   │   └── models/
+│   │       ├── user.py
+│   │       ├── tool_call.py
+│   │       ├── webhook_event.py
+│   │       └── process.py
 │   ├── migrations/              # Alembic
-│   │   └── versions/
 │   └── tests/
 │
-├── nanoclaw/                    # NanoClaw (Node.js)
+├── nanoclaw/                    # NanoClaw (Node.js) — CONFIGURAMOS
 │   ├── Dockerfile
-│   ├── config.yaml              # NanoClaw config
-│   ├── agents/                  # Definicoes de agentes
-│   │   ├── helena-rh.yaml       # Agente RH (Admissao)
-│   │   └── concierge.yaml       # Fallback
-│   ├── tasks/                   # Task definitions
-│   │   └── admissao/            # Processo de admissao
-│   └── claude.md                # Instrucoes base para o NanoClaw
+│   ├── config.yaml              # NanoClaw config (Telegram token, API keys)
+│   ├── claude.md                # System prompt: agentes, regras, tools
+│   └── agents/                  # Agent definitions (YAML)
 │
-├── db/                          # Database
+├── db/
 │   ├── init.sql                 # Schema inicial
-│   └── seeds/                   # Dados iniciais (agentes, config)
+│   └── seeds/
 │
-└── nginx/                       # Reverse proxy
-    └── nginx.conf               # SSL, proxy_pass
+└── nginx/
+    └── nginx.conf
 ```
 
 ---
@@ -207,34 +238,28 @@ plataforma/
 version: '3.8'
 
 services:
-  gateway:
-    build: ./gateway
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/plataforma
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
-      - ASANA_ACCESS_TOKEN=${ASANA_ACCESS_TOKEN}
-      - PIPEDRIVE_API_TOKEN=${PIPEDRIVE_API_TOKEN}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - NANOCLAW_IPC_DIR=/shared/ipc
-    volumes:
-      - ipc-data:/shared/ipc
-    depends_on:
-      - db
-      - nanoclaw
-
   nanoclaw:
     build: ./nanoclaw
     ports:
       - "3000:3000"
     environment:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - GATEWAY_URL=http://gateway:8000
-      - IPC_DIR=/shared/ipc
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TOOL_SERVER_URL=http://gateway:8000
     volumes:
-      - ipc-data:/shared/ipc
       - nanoclaw-data:/data
+
+  gateway:
+    build: ./gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://user:pass@db:5432/plataforma
+      - ASANA_ACCESS_TOKEN=${ASANA_ACCESS_TOKEN}
+      - PIPEDRIVE_API_TOKEN=${PIPEDRIVE_API_TOKEN}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    depends_on:
+      - db
 
   db:
     image: postgres:16
@@ -245,8 +270,6 @@ services:
     volumes:
       - pg-data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
 
   nginx:
     image: nginx:alpine
@@ -257,11 +280,11 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./certs:/etc/nginx/certs
     depends_on:
+      - nanoclaw
       - gateway
 
 volumes:
   pg-data:
-  ipc-data:
   nanoclaw-data:
 ```
 
@@ -270,70 +293,44 @@ volumes:
 ## 7. Schema PostgreSQL (MVP)
 
 ```sql
--- Usuarios (colaboradores Evoluum)
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     telegram_user_id BIGINT UNIQUE,
     telegram_chat_id BIGINT,
-    department TEXT,                    -- 'rh', 'comercial', 'geral'
+    department TEXT,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Conversas (historico)
-CREATE TABLE conversations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id),
-    agent_id TEXT NOT NULL,            -- 'rh', 'comercial', 'concierge'
-    channel TEXT DEFAULT 'telegram',
-    messages JSONB NOT NULL DEFAULT '[]',
-    started_at TIMESTAMPTZ DEFAULT now(),
-    ended_at TIMESTAMPTZ
-);
-
--- Tool calls (audit log)
 CREATE TABLE tool_calls (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id UUID REFERENCES conversations(id),
-    user_id UUID REFERENCES users(id),
-    tool_name TEXT NOT NULL,           -- 'asana_create_task', 'pipedrive_get_deals'
+    user_telegram_id BIGINT,
+    tool_name TEXT NOT NULL,
     input_params JSONB,
     output_result JSONB,
-    status TEXT DEFAULT 'pending',     -- pending, success, error
+    status TEXT DEFAULT 'pending',
     duration_ms INTEGER,
     called_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Webhook events (Asana, Pipedrive incoming)
 CREATE TABLE webhook_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    source TEXT NOT NULL,              -- 'asana', 'pipedrive'
-    event_type TEXT NOT NULL,          -- 'task.completed', 'deal.updated'
+    source TEXT NOT NULL,
+    event_type TEXT NOT NULL,
     payload JSONB NOT NULL,
     processed BOOLEAN DEFAULT false,
-    action_taken TEXT,                 -- 'notified_user', 'triggered_step', 'logged_only'
+    action_taken TEXT,
     received_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Agent configs (fonte de verdade dos agentes)
-CREATE TABLE agent_configs (
-    id TEXT PRIMARY KEY,               -- 'rh', 'comercial', 'concierge'
-    name TEXT NOT NULL,                -- 'Helena', 'Comercial'
-    definition JSONB NOT NULL,         -- Agent definition completa (YAML convertido)
-    is_active BOOLEAN DEFAULT true,
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Process tracking (acompanhamento de processos como admissao)
 CREATE TABLE processes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    type TEXT NOT NULL,                -- 'admissao', 'onboarding'
-    status TEXT DEFAULT 'active',      -- active, completed, cancelled
-    context JSONB NOT NULL DEFAULT '{}', -- dados do processo (nome candidato, etc)
-    steps JSONB NOT NULL DEFAULT '[]',   -- steps com status individual
-    started_by UUID REFERENCES users(id),
-    asana_project_id TEXT,             -- ID do projeto no Asana (se aplicavel)
+    type TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    context JSONB NOT NULL DEFAULT '{}',
+    steps JSONB NOT NULL DEFAULT '[]',
+    external_id TEXT,
     created_at TIMESTAMPTZ DEFAULT now(),
     completed_at TIMESTAMPTZ
 );
@@ -343,134 +340,89 @@ CREATE TABLE processes (
 
 ## 8. Tools (Function Calling)
 
-O NanoClaw configura tools como funcoes que o Claude Agent SDK pode chamar.
-Cada tool e um endpoint HTTP no FastAPI.
-
-**Tools serao definidos quando os processos de RH e Comercial forem detalhados.**
-Cada processo vai gerar os tools necessarios (ex: se admissao precisa criar task no Asana, tera um tool pra isso).
-
-### Mecanismo
+**Mecanismo:**
 
 ```
-Agente precisa agir no mundo
+Claude decide chamar um tool
     │
     ▼
-Claude Agent SDK faz function call: tool_name(params)
+Claude Agent SDK retorna: {tool: "nome", params: {...}}
     │
     ▼
-NanoClaw envia request HTTP para FastAPI: POST /tools/{tool_name}
+NanoClaw faz: POST http://gateway:8000/tools/nome  body: {...}
     │
     ▼
-FastAPI valida, executa (Asana SDK, Pipedrive SDK, DB query, etc)
+FastAPI executa (Asana SDK, Pipedrive SDK, DB, etc)
     │
     ▼
-Retorna resultado → NanoClaw → agente continua conversa
+Retorna JSON → NanoClaw → Claude continua → resposta final
 ```
 
-### Categorias previstas
-
-| Categoria | Quando definir |
-|-----------|---------------|
-| Asana tools | Ao detalhar processo de admissao (RH) |
-| Pipedrive tools | Ao detalhar processos comerciais |
-| Internos (DB, notificacoes) | Conforme necessidade dos processos |
+**Tools serao definidos quando os processos forem detalhados.**
 
 ---
 
-## 9. Agentes
+## 9. O que Construir (ordem)
 
-Fundador ja desenvolveu os agentes. Definicoes serao portadas para o formato NanoClaw quando os processos forem detalhados.
+### Fase 1 — Funcional minimo
+Colaborador fala no Telegram, agente responde via Claude.
 
-### Formato esperado (estrutura, sem conteudo inventado)
+| # | O que | Tipo |
+|---|-------|------|
+| 1 | docker-compose.yml + Dockerfiles | Infra |
+| 2 | Configurar NanoClaw (config.yaml, Telegram token, Claude API key) | Config |
+| 3 | Escrever CLAUDE.md com agentes (Helena, Comercial) | Config |
+| 4 | FastAPI base (main.py, config.py) | Codigo |
+| 5 | Schema PostgreSQL + Alembic | Codigo |
+| 6 | Testar: mandar mensagem no Telegram, receber resposta | Teste |
 
-```yaml
-agent:
-  name: (nome do agente)
-  id: (identificador)
-  title: (titulo)
+### Fase 2 — Integracoes
+Agentes chamam Asana e Pipedrive. Eventos externos chegam.
 
-persona:
-  role: (papel)
-  style: (estilo de comunicacao)
-  identity: (descricao)
+| # | O que | Tipo |
+|---|-------|------|
+| 7 | Definir processos reais (admissao, comercial) com o fundador | Definicao |
+| 8 | Implementar tools no FastAPI conforme processos | Codigo |
+| 9 | Registrar tools no NanoClaw (CLAUDE.md) | Config |
+| 10 | Webhooks Asana + Pipedrive no FastAPI | Codigo |
+| 11 | Testar fluxo completo bidirecional | Teste |
 
-core_principles:
-  - (regras criticas do agente)
+### Fase 3 — Producao
 
-commands:
-  - name: (nome do command)
-    type: worker | worker_api | agent
-    match_patterns: [...]
-    tools: [...]
-
-dependencies:
-  tools: [...]
-
-autoNanoClaw:
-  version: '1.0'
-  guardrails:
-    maxTokensPerResponse: 1024
-    escalateOnUncertainty: true
-  model_preference: claude-sonnet
-  temperature: 0.3
-```
+| # | O que | Tipo |
+|---|-------|------|
+| 12 | Nginx + SSL (Let's Encrypt) | Infra |
+| 13 | Deploy na VPS | Infra |
+| 14 | Configurar webhook do Telegram pra URL publica | Config |
+| 15 | Configurar webhooks Asana/Pipedrive pra URL publica | Config |
 
 ---
 
-## 10. Deploy Steps
+## 10. Resumo: o que voce precisa implementar
 
-```bash
-# 1. Na VPS
-git clone <repo> plataforma
-cd plataforma
+**Codigo Python (FastAPI):**
+- `main.py` — app FastAPI
+- `config.py` — settings
+- `api/tools.py` — endpoints que NanoClaw chama (a definir com processos)
+- `api/webhooks.py` — recebe eventos Asana/Pipedrive
+- `services/asana.py` — wrapper SDK
+- `services/pipedrive.py` — wrapper SDK
+- `services/telegram.py` — enviar notificacoes
+- `models/*.py` — SQLAlchemy models
+- Alembic migrations
 
-# 2. Configurar secrets
-cp .env.example .env
-# Editar: TELEGRAM_BOT_TOKEN, ASANA_ACCESS_TOKEN, PIPEDRIVE_API_TOKEN, ANTHROPIC_API_KEY
+**Configuracao NanoClaw:**
+- `config.yaml` — tokens, URLs
+- `claude.md` — system prompt com agentes e tools
+- `agents/*.yaml` — definicoes de agentes (portar os que ja tem)
 
-# 3. SSL (Let's Encrypt)
-certbot certonly --standalone -d seudominio.com
-
-# 4. Subir
-docker compose up -d
-
-# 5. Rodar migrations
-docker compose exec gateway alembic upgrade head
-
-# 6. Configurar webhook do Telegram
-curl "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook?url=https://seudominio.com/webhook/telegram"
-
-# 7. Configurar webhooks Asana e Pipedrive via dashboard deles
-# Asana: https://seudominio.com/webhook/asana
-# Pipedrive: https://seudominio.com/webhook/pipedrive
-```
+**Infra:**
+- `docker-compose.yml`
+- Dockerfiles (gateway + nanoclaw)
+- `nginx.conf`
+- `.env`
 
 ---
 
-## 11. O que Construir (ordem)
-
-| # | O que | Dependencia |
-|---|-------|-------------|
-| 1 | docker-compose.yml + Dockerfiles | Nenhuma |
-| 2 | FastAPI base (main.py, config) | #1 |
-| 3 | Schema PostgreSQL + Alembic | #2 |
-| 4 | Webhook Telegram (/webhook/telegram) | #2 |
-| 5 | Servico NanoClaw (IPC com FastAPI) | #1 |
-| 6 | Portar agentes existentes para NanoClaw | #5 |
-| 7 | Tools + Webhooks (quando processos forem definidos) | #2, #5 |
-| 8 | Nginx + SSL | #2 |
-| 9 | Deploy VPS | Tudo |
-
-### Fase 1 (funcional minimo): #1-6
-Colaborador fala com agente no Telegram, agente responde via Claude.
-
-### Fase 2 (integracoes): #7
-Tools e webhooks Asana/Pipedrive conforme processos definidos.
-
-### Fase 3 (producao): #8-9
-SSL, dominio, deploy na VPS.
-
----
-
-*MVP Architecture — Implementacao — Evoluum*
-*2026-03-22 | Sessao: claude/analyze-image-tr45K*
+*MVP Architecture — Evoluum — 2026-03-22*
+*Sessao: claude/analyze-image-tr45K*
