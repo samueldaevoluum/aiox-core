@@ -60,6 +60,7 @@ squads/*
 # Published squads (whitelisted for repository)
 !squads/claude-code-mastery/
 !squads/admissao-evoluum/
+!squads/conteudo-samuel/
 keys/
 *.secret
 *.credentials

@@ -1,0 +1,66 @@
+squad:
+  name: conteudo-samuel
+  description: Squad de criacao de conteudo para marca pessoal Samuel Silveira nas redes sociais
+  version: '1.0.0'
+  created: '2026-03-25'
+  created_by: Samuel (CEO) + Orion (@aiox-master)
+
+  context:
+    posicionamento: ../../../posicionamento_samuel/posicionamento-samuel-silveira-v2.md
+    guia_marca_original: ~/Downloads/Guia de Marca Samuel Silveira Evoluum.pdf
+    planejamento_original: ~/Downloads/Planejamento Samuel Silveira Evoluum.pdf
+    conceito_central: Bora Construir
+    triade: Simplicidade | Clareza | Confianca
+
+  scope:
+    canais_principais:
+      - Instagram (Stories, Feed, Carrossel, Reels)
+      - LinkedIn (posts texto, artigos, carrosseis)
+    canais_secundarios:
+      - YouTube (roteiros 10-15 min)
+      - Reddit
+      - Substack
+
+  agents:
+    - id: content-chief
+      name: Rex
+      file: agents/content-chief.md
+      role: orchestrator
+      scope: Triagem de material, recomendacao de formato/canal, criacao rapida, ideias diarias
+
+    - id: instagram-creator
+      name: Mila
+      file: agents/instagram-creator.md
+      role: specialist
+      scope: Stories, Feed posts, Carrosseis, Reels
+
+    - id: linkedin-writer
+      name: Marco
+      file: agents/linkedin-writer.md
+      role: specialist
+      scope: Posts texto, artigos, carrosseis board-ready
+
+    - id: video-scriptwriter
+      name: Ravi
+      file: agents/video-scriptwriter.md
+      role: specialist
+      scope: Roteiros YouTube 10-15min, Substack, Reddit
+
+  workflow_diario:
+    1_input: Samuel envia material bruto (insight, evento, artigo, noticia, reuniao)
+    2_triagem: Rex analisa e recomenda formato + canal + urgencia
+    3_criacao: Rex cria rapido ou delega para especialista
+    4_revisao: Samuel aprova ou pede ajuste
+    5_publicacao: Samuel posta (manual)
+
+  pilares_conteudo:
+    - Movimento e velocidade
+    - IA mudando a forma de desenvolver software
+    - Construir com metodo
+    - Cultura e time sustentam resultado
+    - Bastidores da construcao
+    - Decisoes executivas em Tech
+
+  icp:
+    primario: Empresas de servico (fabricas de software, 500K-1M+/ano)
+    secundario: C-level enterprise
