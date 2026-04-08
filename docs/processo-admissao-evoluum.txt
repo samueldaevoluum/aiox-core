@@ -1,0 +1,285 @@
+================================================================
+PROCESSO DE ADMISSAO COOPERATIVA - EVOLUUM
+Squad: admissao-evoluum | Versao: 1.0
+Referencia: PPI 0002 - Processo de Admissao Cooperativa
+================================================================
+
+
+VISAO GERAL
+-----------
+
+O processo de admissao cooperativa da Evoluum e gerenciado por um squad
+de automacao chamado "admissao-evoluum", composto por dois agentes de IA
+e um ponto de validacao humana.
+
+Objetivo: automatizar a recepcao de novos cooperados desde a aprovacao
+do candidato ate o momento em que todos os dados estao prontos para
+provisionamento (criacao de e-mail, acessos, etc.).
+
+
+QUEM ESTA ENVOLVIDO
+-------------------
+
+  AGENTES DE IA:
+  - Nova (admissao-orchestrator)
+    Papel: Orquestradora do fluxo. Detecta novos candidatos via Asana,
+    gerencia o estado de cada admissao, coordena handoffs entre IA e humano,
+    monitora prazos.
+
+  - Iris (admissao-comms)
+    Papel: Especialista em comunicacao. Gera propostas visuais seguindo
+    as regras de marca (GPTW), envia e-mails ao candidato via Gmail.
+
+  HUMANOS:
+  - Manu
+    Papel: Dispara o processo criando uma tarefa no Asana com os dados
+    do candidato nos comentarios.
+
+  - Pati
+    Papel: Validacao humana obrigatoria da proposta antes do envio.
+    Recebe notificacoes via Asana e/ou Slack.
+
+  CANDIDATO/COOPERADO:
+    Recebe a proposta, aceita, preenche o formulario de onboarding.
+
+
+INTEGRACAO TECNICA
+------------------
+
+  - Asana: fonte de triggers (webhooks), formulario de onboarding, gestao de status
+  - Gmail API: envio de e-mails (proposta e boas-vindas)
+  - Slack: notificacoes para Pati quando acao humana e necessaria
+
+
+================================================================
+FASE 1 - RECEPCAO (unica fase implementada)
+================================================================
+
+TRIGGER (como tudo comeca)
+---------------------------
+
+  Manu cria uma tarefa no projeto "Admissao" no Asana.
+  Nos comentarios da tarefa ela inclui os dados do candidato:
+
+    - Nome completo
+    - Telefone
+    - E-mail pessoal
+    - Cargo
+    - Time
+    - Gestao direta
+    - Salario
+
+  Nova detecta esse evento via webhook Asana (task.created) e inicia
+  o processo automaticamente.
+
+
+MAPA DE ESTADOS
+---------------
+
+  TRIGGERED
+    |
+    v
+  PROPOSAL_SENT
+    |
+    v
+  PROPOSAL_ACCEPTED
+    |
+    v
+  WELCOME_SENT
+    |
+    v
+  FORM_COMPLETED
+    |
+    v
+  PHASE_2_READY  <-- handoff para Fase 2 (provisionamento - futuro)
+
+
+ETAPAS DETALHADAS
+-----------------
+
+  E01 - GERAR E ENVIAR PROPOSTA  [Semi-automatico]
+  ------------------------------------------------
+
+  Executada por: Iris (com validacao da Pati)
+
+  O que acontece:
+  1. Nova dispara Iris com os dados do candidato
+  2. Iris gera a proposta visual seguindo o layout padrao Evoluum:
+
+     Conteudo obrigatorio da proposta:
+     - Saudacao: "OI [NOME],"
+     - Texto da empresa e cargo
+     - Valor mensal: "R$ [VALOR] ([VALOR_EXTENSO])"
+     - Data de inicio
+     - Lista de 11 beneficios (FIXA, nao pode ser alterada):
+         * Vale flex: R$ 500,00
+         * Auxilio equipamento/Home office: R$ 10,00 por dia util
+         * Gamificacao com desafios mensais e lojinha Evoluum
+         * Plano de saude e odontologico
+         * Cultura focada no desenvolvimento individual
+         * Programa de treinamento com ajuda de custo
+         * Programa de indicacao premiada
+         * Day off de aniversario
+         * Liberdade - trabalho remoto (anywhere office)
+         * Programa de folgas
+         * Seguro de vida
+     - Call to action: "Pronto para desvendar esse novo universo?"
+     - Logos GPTW (regra obrigatoria: selos "Melhores Empresas Para
+       Trabalhar" e "Great Place To Work Certified" com posicionamento
+       exato conforme regras da Evoluum)
+
+  3. VALIDACAO HUMANA: Pati recebe a proposta para revisar
+     - Verifica se os dados estao corretos
+     - Verifica se as logos GPTW estao posicionadas corretamente
+     - Aprova ou solicita correcoes
+
+  4. Apos aprovacao da Pati: Iris envia a proposta ao candidato via Gmail
+
+
+  E02 - AGUARDAR ACEITE  [Aguardar - sem timeout]
+  ------------------------------------------------
+
+  Executada por: Nova (monitoramento)
+
+  O que acontece:
+  - Nova aguarda o candidato responder o e-mail aceitando a proposta
+  - Nao ha prazo definido para este passo
+  - Quando o aceite e detectado: Nova dispara E03 automaticamente
+
+
+  E03 - ENVIAR BOAS-VINDAS + FORMULARIO  [Automatico]
+  ----------------------------------------------------
+
+  Executada por: Iris
+
+  O que acontece:
+  1. Nova dispara Iris apos o aceite do candidato
+  2. Iris envia e-mail de boas-vindas com:
+     - Texto acolhedor seguindo template da Evoluum
+     - Link do formulario Asana para preenchimento
+     - Prazo de 24 horas para preencher
+
+  IMPORTANTE: Este e-mail SO e enviado DEPOIS que o candidato aceita.
+  Nunca antes.
+
+
+  E04 - AGUARDAR E EXTRAIR FORMULARIO  [Aguardar + Automatico | SLA: 24h]
+  ------------------------------------------------------------------------
+
+  Executada por: Nova
+
+  O que acontece:
+  1. Nova aguarda evento "form.submission_completed" via webhook Asana
+  2. Prazo: 24 horas para o cooperado preencher
+  3. Apos preenchimento, Nova extrai e estrutura os dados em 3 blocos:
+
+     BLOCO 1 - DADOS CADASTRAIS:
+       Nome completo, e-mail pessoal, endereco completo, data de nascimento,
+       CPF, RG, celular, deficiencia, genero, escolaridade, nivel de ingles,
+       pronome, etnia/raca, estado civil, filhos, conta bancaria,
+       contato de emergencia.
+
+     BLOCO 2 - DOCUMENTOS:
+       Certificado escolar (upload de arquivo), consentimento LGPD.
+
+     BLOCO 3 - CONHECENDO O COOPERADO:
+       Sobrenome preferido para e-mail corporativo, tamanho de camisa,
+       apelido, cidade natal, pets, hobbies, musica/banda favorita,
+       serie favorita, jogo favorito, curiosidade sobre si mesmo,
+       selfie, fotos de pets/hobbies.
+
+  4. Estado atualizado para PHASE_2_READY
+  5. Dados estruturados e prontos para Fase 2
+
+
+CHECKLIST DE VALIDACAO (por etapa)
+-----------------------------------
+
+  Pre-condicoes:
+  [ ] Dados do candidato recebidos via Asana (todos os campos)
+  [ ] Tarefa criada pela Manu no projeto Admissao
+
+  E01 - Proposta:
+  [ ] Proposta gerada com dados corretos (nome, cargo, valor, data)
+  [ ] Lista de beneficios completa (11 itens)
+  [ ] Logos GPTW posicionadas conforme regras
+  [ ] Valor por extenso confere com valor numerico
+  [ ] Pati validou e aprovou a proposta
+  [ ] Proposta enviada ao candidato via Gmail
+
+  E02 - Aceite:
+  [ ] Candidato respondeu aceitando a proposta
+
+  E03 - Boas-Vindas:
+  [ ] E-mail de boas-vindas enviado com template correto
+  [ ] Link do formulario Asana incluido e funcional
+  [ ] Data limite informada (24h)
+
+  E04 - Formulario:
+  [ ] Cooperado preencheu o formulario Asana
+  [ ] Dados extraidos e estruturados em 3 blocos
+  [ ] Campos obrigatorios validados
+  [ ] Certificado escolar recebido (upload)
+  [ ] Consentimento LGPD confirmado
+  [ ] Sobrenome preferido para e-mail registrado
+  [ ] Estado atualizado para PHASE_2_READY
+
+
+TRATAMENTO DE ERROS
+-------------------
+
+  Se houver falha na geracao da proposta:
+  - Nova notifica Pati via Slack ou Asana
+  - Sistema tenta novamente automaticamente (max. 2 tentativas)
+  - Se falhar apos retries: escalada manual para Pati
+
+
+================================================================
+FASE 2 - PROVISIONAMENTO (nao implementada ainda)
+================================================================
+
+  Apos o PHASE_2_READY, os proximos passos seriam:
+  - Criacao de e-mail corporativo
+  - Provisionamento de acessos e ferramentas
+  - Demais etapas de onboarding
+
+  Estes agentes ainda serao desenvolvidos.
+
+
+================================================================
+RESUMO DO FLUXO (visao rapida)
+================================================================
+
+  Manu cria tarefa no Asana com dados do candidato
+          |
+          v
+  Nova detecta e inicia o processo
+          |
+          v
+  Iris gera a proposta visual
+          |
+          v
+  Pati valida a proposta (humano)
+          |
+          v
+  Iris envia proposta ao candidato por e-mail
+          |
+          v
+  Candidato aceita
+          |
+          v
+  Iris envia e-mail de boas-vindas + link do formulario
+          |
+          v
+  Candidato preenche formulario Asana (prazo: 24h)
+          |
+          v
+  Nova extrai e estrutura os dados do formulario
+          |
+          v
+  PRONTO PARA FASE 2 (provisionamento)
+
+
+================================================================
+FIM DO DOCUMENTO
+================================================================
