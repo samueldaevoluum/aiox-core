@@ -1,0 +1,942 @@
+{
+  "version": "1.0",
+  "created_at": "2026-04-12",
+  "description": "25 perguntas otimizadas para diagnóstico progressivo de maturidade (5/área)",
+  "total_questions": 25,
+  "duration_minutes": 5,
+  "confidence_initial": "75-80%",
+  "areas": [
+    "planejamento",
+    "vendas",
+    "operacao",
+    "pessoas",
+    "financeiro"
+  ],
+  "questions": [
+    {
+      "id": "P-01",
+      "area": "planejamento",
+      "area_label": "Planejamento e Execução",
+      "titulo": "Visão Estratégica",
+      "pergunta": "Como você define a direção estratégica da empresa?",
+      "discrimina": "N0 ↔ N1",
+      "discriminacao_tipo": "Inconsciência vs Consciência",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não tenho visão clara, vou resolvendo o dia-a-dia"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tenho uma visão, mas não consegui estruturar ou comunicar"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho visão clara, a equipe sabe, mas executa depende de mim"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Visão documentada, metas alinhadas, equipe executa com autonomia"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe reformula e melhora estratégia, eu aprovo/desaprovo"
+        }
+      ]
+    },
+    {
+      "id": "P-02",
+      "area": "planejamento",
+      "area_label": "Planejamento e Execução",
+      "titulo": "Definição de Metas",
+      "pergunta": "Como as metas são definidas na sua empresa?",
+      "discrimina": "N1 ↔ N2",
+      "discriminacao_tipo": "Tentativa sem estrutura vs Estrutura frágil",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não temos metas, resolvemos conforme aparece"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tenho metas na cabeça, mas não consigo estruturar com a equipe"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Metas por trimestre, documentadas, mas eu ajusto durante"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Metas mensais cascateadas, revisadas em reunião estruturada"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Sistema OKRs, equipe propõe, feedback contínuo autônomo"
+        }
+      ]
+    },
+    {
+      "id": "P-03",
+      "area": "planejamento",
+      "area_label": "Planejamento e Execução",
+      "titulo": "Acompanhamento de Resultados",
+      "pergunta": "Com que frequência e como você acompanha o desempenho?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Informal vs Sistematizado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Só quando tem problema, aí eu fico sabendo"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Irregularmente, quando lembro faço uma continha rápida"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Mensalmente, informalmente, olho os números principais"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Dashboard semanal, reunião de revisão com indicadores"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe acompanha automaticamente, me tira da loop"
+        }
+      ]
+    },
+    {
+      "id": "P-04",
+      "area": "planejamento",
+      "area_label": "Planejamento e Execução",
+      "titulo": "Delegação e Responsabilidade",
+      "pergunta": "Como você delega responsabilidades?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Dependência vs Autonomia",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Eu faço tudo porque só assim fica certo"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Delego mas acabo revendo tudo depois"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Delego, mas preciso ficar perto supervisionando"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Delego com autoridade clara, indicador de sucesso, raramente revejo"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Pessoas decidem e executam sem mim, tenho confiança total"
+        }
+      ]
+    },
+    {
+      "id": "P-05",
+      "area": "planejamento",
+      "area_label": "Planejamento e Execução",
+      "titulo": "Tomada de Decisão",
+      "pergunta": "Como você toma decisões importantes?",
+      "discrimina": "N3 ↔ N4",
+      "discriminacao_tipo": "Dados vs Organização Autônoma",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Pela experiência, gut feeling, na hora"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tento coletar dados, mas geralmente decido rápido mesmo assim"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Olho alguns números, mas experiência pesa mais"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Análise de dados, números guiam a decisão"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Decisões baseadas em análise estruturada, discussão com pares"
+        }
+      ]
+    },
+    {
+      "id": "V-01",
+      "area": "vendas",
+      "area_label": "Vendas e Conversão",
+      "titulo": "Processo de Vendas",
+      "pergunta": "Como é o seu processo de vendas?",
+      "discrimina": "N0 ↔ N1",
+      "discriminacao_tipo": "Inconsciência vs Consciência",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não temos processo, vou vendendo como consigo"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tentei criar, mas não consigo manter consistência"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Temos pipeline básico, mas ainda dependo de mim pra fechar"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Pipeline definido, equipe segue, tenho taxa de conversão"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe itera processo, melhora taxa, eu só valido"
+        }
+      ]
+    },
+    {
+      "id": "V-02",
+      "area": "vendas",
+      "area_label": "Vendas e Conversão",
+      "titulo": "Meta e Acompanhamento",
+      "pergunta": "Você acompanha meta de vendas com regularidade?",
+      "discrimina": "N1 ↔ N2",
+      "discriminacao_tipo": "Tentativa vs Estrutura",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não tenho meta, só vendo o que aparece"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tenho meta, mas não acompanho com frequência"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Meta mensal, acompanho informalmente"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Meta mensal, reunião semanal de vendas com números"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe acompanha em tempo real, me avisa só se desvio"
+        }
+      ]
+    },
+    {
+      "id": "V-03",
+      "area": "vendas",
+      "area_label": "Vendas e Conversão",
+      "titulo": "Qualidade do Lead",
+      "pergunta": "Como você diferencia lead quente de frio?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Informal vs Sistematizado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não penso nisso, atendo todos igual"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tento priorizar, mas não tenho critério claro"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho critério básico, mas ainda faço tudo que aparece"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Critério de qualificação, priorizo quentes, indica conversão"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Sistema de scoring, equipe qualifica, decisão automática"
+        }
+      ]
+    },
+    {
+      "id": "V-04",
+      "area": "vendas",
+      "area_label": "Vendas e Conversão",
+      "titulo": "Retenção de Cliente",
+      "pergunta": "Como você mantém cliente após venda?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Reativo vs Estruturado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não tenho rotina, só ligo se algo pede"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tento fazer follow-up, mas não consigo manter"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho rotina básica de contato"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Rotina de retenção estruturada, indicador de churn"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe gerencia retenção, NPS acompanhado"
+        }
+      ]
+    },
+    {
+      "id": "V-05",
+      "area": "vendas",
+      "area_label": "Vendas e Conversão",
+      "titulo": "Análise de Vendas",
+      "pergunta": "O que você faz quando venda cai?",
+      "discrimina": "N3 ↔ N4",
+      "discriminacao_tipo": "Reativo vs Analítico",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Fico preocupado, vendo mais duro"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tiro conclusões rápido, mudo estratégia"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Olho números básicos, tiro conclusão"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Análise de dados, identifica aonde caiu (lead/conversão/retenção)"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe analisa, propõe ajustes, implementa"
+        }
+      ]
+    },
+    {
+      "id": "O-01",
+      "area": "operacao",
+      "area_label": "Operação e Processos",
+      "titulo": "Documentação de Processos",
+      "pergunta": "Seus processos estão documentados?",
+      "discrimina": "N0 ↔ N1",
+      "discriminacao_tipo": "Tácito vs Tentativa",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não, tá tudo na minha cabeça"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tentei documentar, mas ninguém segue"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho documento básico dos principais"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Processos documentados, checklist, revisão periódica"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe mantém documentação, atualiza automaticamente"
+        }
+      ]
+    },
+    {
+      "id": "O-02",
+      "area": "operacao",
+      "area_label": "Operação e Processos",
+      "titulo": "Eficiência Operacional",
+      "pergunta": "Como você sabe se a operação está eficiente?",
+      "discrimina": "N1 ↔ N2",
+      "discriminacao_tipo": "Percepção vs Medição",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não sei, acho que tá bom"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Acho que tem problema, mas não sei medir"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho noção, olho custos informalmente"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Indicadores de eficiência (tempo/custo), acompanhamento"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "KPIs operacionais, equipe melhora continuamente"
+        }
+      ]
+    },
+    {
+      "id": "O-03",
+      "area": "operacao",
+      "area_label": "Operação e Processos",
+      "titulo": "Qualidade do Produto/Serviço",
+      "pergunta": "Como você garante qualidade?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Informal vs Sistematizado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Confio em quem faz, não tenho check"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Eu que faço a qualidade, ou reviso tudo"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho critério de qualidade, mas informal"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Checklist de qualidade, acompanhamento, taxa de defeitos"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe garante qualidade, métricas contínuas"
+        }
+      ]
+    },
+    {
+      "id": "O-04",
+      "area": "operacao",
+      "area_label": "Operação e Processos",
+      "titulo": "Resolução de Problemas",
+      "pergunta": "Quando tem problema na operação, o que você faz?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Reativo vs Estruturado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Apago o fogo, resolvo rápido"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Resolvo, mas problema volta"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Analiso e resolvo, tem melhoria mas é lenta"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Análise de causa raiz, solução estruturada, acompanhamento"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe identifica e resolve antes de virar problema"
+        }
+      ]
+    },
+    {
+      "id": "O-05",
+      "area": "operacao",
+      "area_label": "Operação e Processos",
+      "titulo": "Inovação em Processos",
+      "pergunta": "Como vocês melhoram os processos?",
+      "discrimina": "N3 ↔ N4",
+      "discriminacao_tipo": "Dirigida vs Autônoma",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não melhoramos, faz anos que é igual"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Às vezes tiro uma ideia e implemento"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Ocasionalmente melhoramos algo"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Revisão periódica de processos, identifica melhorias"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe propõe, testa, implementa melhoria contínua"
+        }
+      ]
+    },
+    {
+      "id": "PE-01",
+      "area": "pessoas",
+      "area_label": "Pessoas e Cultura",
+      "titulo": "Papéis e Responsabilidades",
+      "pergunta": "Cada pessoa sabe exatamente qual é o seu papel?",
+      "discrimina": "N0 ↔ N1",
+      "discriminacao_tipo": "Indefinido vs Tentativa",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não, eles fazem o que aparece"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tentei definir, mas ficou vago"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Têm uma noção, mas ainda dependem de mim pra orientação"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Papéis claros, descrição por escrito, responsáveis definidos"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe redefine seus papéis, autonomia clara"
+        }
+      ]
+    },
+    {
+      "id": "PE-02",
+      "area": "pessoas",
+      "area_label": "Pessoas e Cultura",
+      "titulo": "Feedback e Desenvolvimento",
+      "pergunta": "Como você dá feedback na equipe?",
+      "discrimina": "N1 ↔ N2",
+      "discriminacao_tipo": "Reativo vs Estruturado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não dou feedback estruturado"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Dou quando tem problema, é reativo"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Ocasionalmente dou feedback informal"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Reunião 1:1 periódica, feedback estruturado"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Feedback contínuo, equipe auto-avalia"
+        }
+      ]
+    },
+    {
+      "id": "PE-03",
+      "area": "pessoas",
+      "area_label": "Pessoas e Cultura",
+      "titulo": "Retenção de Talentos",
+      "pergunta": "Qual é o turnover da sua equipe?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Não-mitigado vs Gerenciado",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Alto, saem várias pessoas"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Médio, perco gente boa"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Baixo, mas não tenho estratégia"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Baixo, tenho plano de retenção (salário/benefícios/dev)"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Muito baixo, equipe se sente valorizada e cresce"
+        }
+      ]
+    },
+    {
+      "id": "PE-04",
+      "area": "pessoas",
+      "area_label": "Pessoas e Cultura",
+      "titulo": "Comunicação Interna",
+      "pergunta": "Como vocês se comunicam internamente?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Informal vs Estruturada",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Informal, conversa quando vira"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tentei implantar reunião, mas virou caótica"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Reunião ocasional, comunicação informal"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Rituais de comunicação (daily, weekly, mensal)"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Comunicação estruturada, equipe se auto-organiza"
+        }
+      ]
+    },
+    {
+      "id": "PE-05",
+      "area": "pessoas",
+      "area_label": "Pessoas e Cultura",
+      "titulo": "Cultura e Valores",
+      "pergunta": "Como você descreve a cultura da sua empresa?",
+      "discrimina": "N3 ↔ N4",
+      "discriminacao_tipo": "Dirigida vs Viva",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não tenho cultura definida"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tenho valores, mas não consigo instalar"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho valores, a equipe respeita parcialmente"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Valores definidos, refletem nas decisões"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Cultura forte, equipe vive e melhora os valores"
+        }
+      ]
+    },
+    {
+      "id": "F-01",
+      "area": "financeiro",
+      "area_label": "Gestão Financeira e Caixa",
+      "titulo": "Controle Financeiro",
+      "pergunta": "Como você acompanha o financeiro da empresa?",
+      "discrimina": "N0 ↔ N1",
+      "discriminacao_tipo": "Crise vs Contabilidade",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não acompanho, só olho quando vira crise"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tiro uma continha, mas não é estruturado"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho planilha, olho mensalmente"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Dashboard financeiro, revisão semanal ou quinzenal"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe gerencia, me avisa só desvios"
+        }
+      ]
+    },
+    {
+      "id": "F-02",
+      "area": "financeiro",
+      "area_label": "Gestão Financeira e Caixa",
+      "titulo": "Fluxo de Caixa",
+      "pergunta": "Você consegue prever o fluxo de caixa?",
+      "discrimina": "N1 ↔ N2",
+      "discriminacao_tipo": "Surpresa vs Previsão",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não, é surpresa"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tiro uma estimativa, mas erra muito"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho previsão básica de entrada/saída"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Previsão estruturada (30/60/90 dias), acompanhamento"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe mantém previsão, propõe ações"
+        }
+      ]
+    },
+    {
+      "id": "F-03",
+      "area": "financeiro",
+      "area_label": "Gestão Financeira e Caixa",
+      "titulo": "Lucratividade por Cliente/Produto",
+      "pergunta": "Você sabe quanto cada cliente/produto lucra?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Intuição vs Análise",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não faço essa análise"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Acho que sei, mas não tenho dados"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho noção, olho ocasionalmente"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Análise de margem por cliente/produto, mensal"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe analisa, propõe mix otimizado"
+        }
+      ]
+    },
+    {
+      "id": "F-04",
+      "area": "financeiro",
+      "area_label": "Gestão Financeira e Caixa",
+      "titulo": "Gestão de Custos",
+      "pergunta": "Como você controla os custos?",
+      "discrimina": "N2 ↔ N3",
+      "discriminacao_tipo": "Descontrole vs Orçamento",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Não controlo, gasto conforme aparece"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tiro uma conta rápida quando lembro"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Tenho budget básico, mas ultrapasso"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Budget por área, acompanhamento mensal"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe propõe otimizações, corta desperdício"
+        }
+      ]
+    },
+    {
+      "id": "F-05",
+      "area": "financeiro",
+      "area_label": "Gestão Financeira e Caixa",
+      "titulo": "Decisões Financeiras Estratégicas",
+      "pergunta": "Como você toma decisões financeiras importantes?",
+      "discrimina": "N3 ↔ N4",
+      "discriminacao_tipo": "Intuição vs Análise Estruturada",
+      "peso": 1.0,
+      "opcoes": [
+        {
+          "nivel": 0,
+          "label": "Inexistente",
+          "texto": "Pela intuição, conforme tenho dinheiro"
+        },
+        {
+          "nivel": 1,
+          "label": "Reativo",
+          "texto": "Tiro uma conta rápida e decido"
+        },
+        {
+          "nivel": 2,
+          "label": "Organização Inicial",
+          "texto": "Analiso números básicos"
+        },
+        {
+          "nivel": 3,
+          "label": "Sistema Estruturado",
+          "texto": "Análise de ROI, cenários, decide baseado em dados"
+        },
+        {
+          "nivel": 4,
+          "label": "Excelência",
+          "texto": "Equipe analisa, propõe cenários, discussão com pares"
+        }
+      ]
+    }
+  ]
+}
