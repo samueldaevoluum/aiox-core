@@ -26,5 +26,10 @@ agents:
     file: agents/video-scriptwriter.md
     role: specialist
 
+  - id: artigo-writer
+    name: Vitor
+    file: agents/artigo-writer.md
+    role: specialist
+
 references:
   posicionamento: ../../../posicionamento_samuel/posicionamento-samuel-silveira-v2.md

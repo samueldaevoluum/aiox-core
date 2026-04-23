@@ -1,0 +1,21 @@
+active_ides:
+  - claude
+
+squad_aliases:
+  conteudo-samuel: conteudo-samuel
+  admissao-evoluum: admissao-evoluum
+  pre-venda-evoluum: pre-venda-evoluum
+  vendas-evoluum: vendas-evoluum
+  claude-code-mastery: claude-code-mastery
+
+sync_mappings:
+  squad_agents:
+    source: 'squads/*/agents/'
+    destinations:
+      claude:
+        - path: '.claude/commands/{squad_alias}/agents/'
+          format: 'md'
+
+behavior:
+  log_sync_operations: true
+  overwrite_existing: false
